@@ -1,6 +1,5 @@
 import multiprocessing as mp
 import os
-from multiprocessing import Pool
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
@@ -29,8 +28,8 @@ class FundaScraper:
         self.want_to = want_to
         self.find_past = find_past
         self.n_pages = min(max(n_pages, 1), 999)
-        self.links = []
-        self.raw_df = None
+        self.links: List[str] = []
+        self.raw_df = pd.DataFrame()
         self.base_url = config.base_url
         self.selectors = config.css_selector
         self.check_dir()

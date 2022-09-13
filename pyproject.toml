@@ -20,7 +20,17 @@ keywords = ["feed", "reader", "tutorial"]
 dependencies = [
     "feedparser >= 5.2.0",
     "html2text",
+    "sgmllib3k",
     'tomli; python_version < "3.11"',
+    "pyyaml",
+    "diot",
+    "requests",
+    "beautifulsoup4",
+    "tqdm",
+    "multiprocessing",
+    "pandas",
+    "datetime",
+    "lxml"
 ]
 requires-python = ">=3.7"
 
@@ -28,7 +38,8 @@ requires-python = ">=3.7"
 dev = ["black", "bumpver", "isort", "pip-tools", "pytest"]
 
 [project.urls]
-Homepage = "https://github.com/whchien/funda-scraper"
+"Homepage" = "https://github.com/whchien/funda-scraper"
+"Bug Tracker" = "https://github.com/whchien/funda-scraper/issues"
 
 [project.scripts]
 realpython = "reader.__main__:main"

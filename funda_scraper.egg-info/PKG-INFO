@@ -1,0 +1,18 @@
+Metadata-Version: 2.1
+Name: funda-scraper
+Version: 1.0.0
+Summary: Read the latest Real Python tutorials
+Home-page: https://github.com/whchien/funda-scraper
+Author: WillChien
+Author-email: Will Chien <locriginal@gmail.com>
+Project-URL: Homepage, https://github.com/whchien/funda-scraper
+Project-URL: Bug Tracker, https://github.com/whchien/funda-scraper/issues
+Keywords: feed,reader,tutorial
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Requires-Python: >=3.6.0
+Description-Content-Type: text/markdown
+Provides-Extra: dev
+
+# funda-scraper

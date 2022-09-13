@@ -1,16 +1,4 @@
 import logging
-from typing import Union
-
-
-def str2bool(input_arg: Union[str, bool]) -> bool:
-    if isinstance(input_arg, bool):
-        return input_arg
-    if input_arg.lower() in ("yes", "true", "t", "y", "1"):
-        return True
-    elif input_arg.lower() in ("no", "false", "f", "n", "0"):
-        return False
-    else:
-        raise logger.error("Boolean value is expected.")
 
 
 class CustomFormatter(logging.Formatter):
