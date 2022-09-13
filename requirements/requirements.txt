@@ -1,0 +1,9 @@
+pyyaml
+diot
+requests
+beautifulsoup4
+tqdm
+multiprocessing
+pandas
+datetime
+lxml

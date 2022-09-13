@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import os
 from multiprocessing import Pool
 import pandas as pd
 import requests
@@ -6,27 +7,33 @@ from bs4 import BeautifulSoup
 from typing import List, Dict
 import datetime
 from funda_scraper.config.core import config
+from funda_scraper.preprocess import preprocess_data
 from funda_scraper.utils import logger
 from tqdm import tqdm
+from tqdm.contrib.concurrent import process_map
 
 
 class FundaScraper:
+    """
+    Handles the main scraping function from the website.
+    """
+
     def __init__(
         self,
-        area: str = "amsterdam",
-        want_to: str = "rent",
+        area: str = None,
+        want_to: str = "buy",
         n_pages: int = 1,
-        find_past: bool = False,
+        find_past: bool = True,
     ):
-        self.area = area.lower().replace(" ", "-")
+        self.area = area.lower().replace(" ", "-") if isinstance(area, str) else area
         self.want_to = want_to
         self.find_past = find_past
-        assert n_pages >= 1, "The min value for n_page is 1."
-        self.n_pages = n_pages
-        self.urls_for_respective_houses = []
-        self.result_df = None
+        self.n_pages = min(max(n_pages, 1), 999)
+        self.links = []
+        self.raw_df = None
         self.base_url = config.base_url
         self.selectors = config.css_selector
+        self.check_dir()
 
     def __repr__(self):
         return (
@@ -38,6 +45,7 @@ class FundaScraper:
 
     @property
     def site_url(self) -> Dict[str, str]:
+        """Return the corresponding urls."""
         if self.to_buy:
             return {
                 "close": f"{self.base_url}/koop/verkocht/{self.area}/",
@@ -59,6 +67,12 @@ class FundaScraper:
             raise ValueError("'want_to' must be 'either buy' or 'rent'.")
 
     @staticmethod
+    def check_dir() -> None:
+        """Check whether a temporary directory for data"""
+        if not os.path.exists("data"):
+            os.makedirs("data")
+
+    @staticmethod
     def get_urls_from_one_page(url: str) -> List[str]:
         response = requests.get(url, headers=config.header)
         soup = BeautifulSoup(response.text, "lxml")
@@ -66,15 +80,30 @@ class FundaScraper:
         item_list = [h.get("href") for h in house]
         return list(set(item_list))
 
+    def set(
+        self,
+        area: str = None,
+        want_to: str = None,
+        n_pages: int = None,
+        find_past: bool = None,
+    ) -> None:
+        if area is not None:
+            self.area = area
+        if want_to is not None:
+            self.want_to = want_to
+        if n_pages is not None:
+            self.n_pages = n_pages
+        if find_past is not None:
+            self.find_past = find_past
+
     def get_urls_from_n_pages(self) -> None:
+        if self.area is None or self.want_to is None:
+            raise ValueError("You haven't set the area and what you're looking for.")
+
         logger.info("*** Start to retrieve urls for all pages *** ")
 
         urls = []
-        main_url = (
-            self.site_url["close"]
-            if self.find_past
-            else self.site_url["open"]
-        )
+        main_url = self.site_url["close"] if self.find_past else self.site_url["open"]
         for i in tqdm(range(0, self.n_pages + 1)):
             item_list = self.get_urls_from_one_page(main_url + f"p{i}")
             if len(item_list) == 0:
@@ -85,7 +114,7 @@ class FundaScraper:
         logger.info(
             f"*** Got all the urls. {len(urls)} houses found in {self.n_pages} pages. ***"
         )
-        self.urls_for_respective_houses = ["https://www.funda.nl" + url for url in urls]
+        self.links = ["https://www.funda.nl" + url for url in urls]
 
     @staticmethod
     def get_value(soup: BeautifulSoup, selector: str) -> str:
@@ -94,8 +123,7 @@ class FundaScraper:
         except IndexError:
             return "na"
 
-    def scrape_result_from_one_house(self, url: str) -> List[str]:
-
+    def scrape_from_url(self, url: str) -> List[str]:
         # Initialize for each page
         response = requests.get(url, headers=config.header)
         soup = BeautifulSoup(response.text, "lxml")
@@ -112,7 +140,9 @@ class FundaScraper:
             self.get_value(soup, self.selectors.address),
             self.get_value(soup, self.selectors.descrip),
             self.get_value(soup, list_since_selector).replace("\n", ""),
-            self.get_value(soup, self.selectors.zip_code).replace("\n", "").replace("\r        ", ""),
+            self.get_value(soup, self.selectors.zip_code)
+            .replace("\n", "")
+            .replace("\r        ", ""),
             self.get_value(soup, self.selectors.size),
             self.get_value(soup, self.selectors.year),
             self.get_value(soup, self.selectors.living_area),
@@ -122,7 +152,8 @@ class FundaScraper:
             self.get_value(soup, self.selectors.num_of_bathrooms).replace("\n", ""),
             self.get_value(soup, self.selectors.layout),
             self.get_value(soup, self.selectors.energy_label).replace(
-                "\r\n        ", ""),
+                "\r\n        ", ""
+            ),
             self.get_value(soup, self.selectors.insulation).replace("\n", ""),
             self.get_value(soup, self.selectors.heating).replace("\n", ""),
             self.get_value(soup, self.selectors.ownership).replace("\n", ""),
@@ -137,8 +168,6 @@ class FundaScraper:
             self.get_value(soup, self.selectors.last_ask_price_m2).split("\r")[0],
         ]
 
-        logger.info(f">>> DONE: {url}")
-
         return result
 
     def scrape_pages(self) -> None:
@@ -147,10 +176,7 @@ class FundaScraper:
 
         # Scrape pages with multiprocessing to improve efficiency
         pools = mp.cpu_count()
-        with Pool(pools) as p:
-            content = p.map(
-                self.scrape_result_from_one_house, self.urls_for_respective_houses
-            )
+        content = process_map(self.scrape_from_url, self.links, max_workers=pools)
 
         for i, c in enumerate(content):
             df.loc[len(df)] = c
@@ -158,22 +184,41 @@ class FundaScraper:
         df["city"] = self.area
         df["log_id"] = datetime.datetime.now().strftime("%Y%m-%d%H-%M%S")
         logger.info(f"*** All scraping done: {df.shape[0]} results ***")
-        self.result_df = df
+        self.raw_df = df
 
-    def save_to_csv(self) -> None:
+    def save_to_csv(self, filepath: str = None) -> None:
         date = str(datetime.datetime.now().date()).replace("-", "")
-        status = "close" if self.find_past else "open"
-        want_to = "buy" if self.to_buy else "rent"
-        filename = f"./data/raw/{status}/{want_to}/houseprice_{date}_{self.area}_{status}_{want_to}_{len(self.urls_for_respective_houses)}.csv"
-        self.result_df.to_csv(filename, index=False)
-        logger.info(f"*** File saved: {filename}. ***")
+        if self.find_past:
+            if self.to_buy:
+                status = "sold"
+            else:
+                status = "rented"
+        else:
+            if self.to_buy:
+                status = "selling"
+            else:
+                status = "renting"
 
-    def run(self) -> None:
+        if filepath is None:
+            filepath = (
+                f"./data/houseprice_{date}_{self.area}_{status}_{len(self.links)}.csv"
+            )
+        self.raw_df.to_csv(filepath, index=False)
+        logger.info(f"*** File saved: {filepath}. ***")
+
+    def run(self, raw_data: bool = False) -> pd.DataFrame:
         self.get_urls_from_n_pages()
         self.scrape_pages()
 
+        if raw_data:
+            return self.raw_df
+        else:
+            logger.info("Cleaning data..")
+            clean_df = preprocess_data(df=self.raw_df, is_past=self.find_past)
+            return clean_df
+
 
 if __name__ == "__main__":
-    scraper = FundaScraper(area="den-haag", want_to="rent", n_pages=999, find_past=True)
-    scraper.run()
-    scraper.save_to_csv()
+    scraper = FundaScraper(area="den-haag", want_to="rent", n_pages=1, find_past=True)
+    df = scraper.run()
+    print(df)

@@ -1,10 +1,10 @@
 import pandas as pd
-from funda_scraper.config import config
+from funda_scraper.config.core import config
 from datetime import datetime
 from datetime import timedelta
 
 
-def clean_price(x):
+def clean_price(x: str) -> int:
     try:
         return int(str(x).split(" ")[1].replace(",", ""))
     except ValueError:
@@ -13,7 +13,7 @@ def clean_price(x):
         return 0
 
 
-def clean_year(x):
+def clean_year(x: str) -> int:
     if len(x) == 4:
         return int(x)
     elif x.find("-") != -1:
@@ -24,7 +24,7 @@ def clean_year(x):
         return 0
 
 
-def clean_living_area(x):
+def clean_living_area(x: str) -> int:
     try:
         return int(str(x).replace(",", "").split(" m²")[0])
     except ValueError:
@@ -33,28 +33,28 @@ def clean_living_area(x):
         return 0
 
 
-def find_n_room(x):
+def find_n_room(x: str) -> int:
     if x.find("room") != -1:
         return int(str(x).split("room")[0].strip())
     else:
         return 0
 
 
-def find_n_bedroom(x):
+def find_n_bedroom(x: str) -> int:
     if x.find("bedroom") != -1:
         return int(x.split(" ")[2].replace("(", ""))
     else:
         return 0
 
 
-def find_n_bathroom(x):
+def find_n_bathroom(x: str) -> int:
     if x.find("bathroom") != -1:
         return int(str(x).split("bathroom")[0].strip())
     else:
         return 0
 
 
-def fix_typo(x) -> str:
+def fix_typo(x: str) -> str:
     month_mapping = {
         "januari": "January",
         "februari": "February",
@@ -71,12 +71,12 @@ def fix_typo(x) -> str:
     return x
 
 
-def get_neighbor(x):
+def get_neighbor(x: str) -> str:
     city = x.split("/")[0].replace("-", " ")
     return x.lower().split(city)[-1]
 
 
-def clean_energy_label(x):
+def clean_energy_label(x: str) -> str:
     try:
         x = x.split(" ")[0]
         if x.find("A+") != -1:
