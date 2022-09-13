@@ -1,5 +1,5 @@
 import pandas as pd
-from scraper.config import config
+from funda_scraper.config import config
 from datetime import datetime
 from datetime import timedelta
 

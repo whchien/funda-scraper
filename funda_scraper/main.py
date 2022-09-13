@@ -2,9 +2,9 @@ import argparse
 import logging
 import time
 
-from scraper.utils import str2bool
-from scraper.scrape import FundaScraper
-from scraper.db import DBManager
+from funda_scraper.utils import str2bool
+from funda_scraper.scrape import FundaScraper
+from funda_scraper.db import DBManager
 
 logger = logging.getLogger(__name__)
 

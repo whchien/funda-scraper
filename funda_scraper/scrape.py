@@ -5,8 +5,8 @@ import requests
 from bs4 import BeautifulSoup
 from typing import List, Dict
 import datetime
-from scraper.config import config
-from scraper.utils import logger
+from funda_scraper.config.core import config
+from funda_scraper.utils import logger
 from tqdm import tqdm
 
 

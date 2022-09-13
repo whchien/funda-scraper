@@ -1,7 +1,7 @@
 import sqlite3
-from scraper.config import config
-from scraper.preprocess import preprocess_data
-from scraper.utils import logger
+from funda_scraper.config import config
+from funda_scraper.preprocess import preprocess_data
+from funda_scraper.utils import logger
 import pandas as pd
 
 
