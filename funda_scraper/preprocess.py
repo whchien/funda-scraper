@@ -91,19 +91,21 @@ def clean_list_date(x):
     def delta_now(d):
         t = timedelta(days=d)
         return datetime.now() - t
-
-    if x.find("€") != -1 or x.find("na") != -1:
+    try:
+        if x.find("€") != -1 or x.find("na") != -1 or x.find("Indefinite duration") != -1:
+            return "na"
+        elif x.find("month") != -1:
+            return delta_now(int(x.split("month")[0].strip()[0]) * 30)
+        elif x.find("week") != -1:
+            return delta_now(int(x.split("month")[0].strip()[0]) * 7)
+        elif x.find("Today") != -1:
+            return delta_now(1)
+        elif x.find("day") != -1:
+            return delta_now(int(x.split("month")[0].strip()))
+        else:
+            return datetime.strptime(x, "%B %d, %Y")
+    except ValueError:
         return "na"
-    elif x.find("month") != -1:
-        return delta_now(int(x.split("month")[0].strip()[0]) * 30)
-    elif x.find("week") != -1:
-        return delta_now(int(x.split("month")[0].strip()[0]) * 7)
-    elif x.find("Today") != -1:
-        return delta_now(1)
-    elif x.find("day") != -1:
-        return delta_now(int(x.split("month")[0].strip()))
-    else:
-        return datetime.strptime(x, "%B %d, %Y")
 
 
 def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:

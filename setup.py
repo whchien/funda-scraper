@@ -6,7 +6,7 @@ from pathlib import Path
 from setuptools import find_packages, setup
 
 # Package meta-data.
-NAME = 'funda-funda_scraper'
+NAME = 'funda-scraper'
 DESCRIPTION = "House price scraping from Funda website."
 URL = "https://github.com/whchien/funda-scraper"
 EMAIL = "locriginal@gmail.com"
@@ -28,7 +28,6 @@ with open(PACKAGE_DIR / "VERSION") as f:
     about["__version__"] = _version
 
 
-# What packages are required for this module to be executed?
 def list_reqs(fname="requirements.txt"):
     with open(REQUIREMENTS_DIR / fname) as fd:
         return fd.read().splitlines()
@@ -45,7 +44,6 @@ setup(
     python_requires=REQUIRES_PYTHON,
     url=URL,
     packages=find_packages(exclude=("tests",)),
-    package_data={"regression_model": ["VERSION"]},
     install_requires=list_reqs(),
     extras_require={},
     include_package_data=True,

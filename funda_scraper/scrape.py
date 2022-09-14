@@ -30,6 +30,7 @@ class FundaScraper:
         self.n_pages = min(max(n_pages, 1), 999)
         self.links: List[str] = []
         self.raw_df = pd.DataFrame()
+        self.clean_df = pd.DataFrame()
         self.base_url = config.base_url
         self.selectors = config.css_selector
         self.check_dir()
@@ -79,7 +80,7 @@ class FundaScraper:
         item_list = [h.get("href") for h in house]
         return list(set(item_list))
 
-    def set(
+    def init(
         self,
         area: str = None,
         want_to: str = None,
@@ -214,10 +215,5 @@ class FundaScraper:
         else:
             logger.info("Cleaning data..")
             clean_df = preprocess_data(df=self.raw_df, is_past=self.find_past)
+            self.clean_df = clean_df
             return clean_df
-
-
-if __name__ == "__main__":
-    scraper = FundaScraper(area="den-haag", want_to="rent", n_pages=1, find_past=True)
-    df = scraper.run()
-    print(df)
