@@ -176,7 +176,11 @@ class FundaScraper:
 
         # Scrape pages with multiprocessing to improve efficiency
         pools = mp.cpu_count()
-        content = process_map(self.scrape_from_url, self.links, max_workers=pools)
+        # content = process_map(self.scrape_from_url, self.links, max_workers=pools)
+        with mp.Pool(pools) as p:
+            content = list(tqdm(p.map(
+                self.scrape_from_url, self.links
+            )))
 
         for i, c in enumerate(content):
             df.loc[len(df)] = c

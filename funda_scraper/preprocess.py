@@ -128,8 +128,6 @@ def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
 
     # Location
     df["zip"] = df["zip_code"].apply(lambda x: x[:4])
-    df["temp"] = df["city"] + "/" + df["zip_code"]
-    df["neighborhood"] = df["temp"].apply(get_neighbor)
 
     # House layout
     df["room"] = df["num_of_rooms"].apply(find_n_room)

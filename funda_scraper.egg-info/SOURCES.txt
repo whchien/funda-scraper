@@ -1,6 +1,7 @@
 MANIFEST.in
 README.md
 pyproject.toml
+requirements.txt
 setup.py
 ./requirements/requirements.txt
 funda_scraper/VERSION
@@ -14,4 +15,5 @@ funda_scraper.egg-info/dependency_links.txt
 funda_scraper.egg-info/requires.txt
 funda_scraper.egg-info/top_level.txt
 funda_scraper/config/__init__.py
+funda_scraper/config/config.yaml
 funda_scraper/config/core.py
