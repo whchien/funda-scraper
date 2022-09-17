@@ -4,6 +4,7 @@ recursive-include ./funda_scraper/*
 
 include funda_scraper/VERSION
 include funda_scraper/config/config.yaml
+include README.md
 
 include ./requirements/requirements.txt
 include ./requirements/test_requirements.txt

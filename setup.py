@@ -7,22 +7,17 @@ from setuptools import find_packages, setup
 
 # Package meta-data.
 NAME = 'funda-scraper'
-DESCRIPTION = "House price scraping from Funda website."
 URL = "https://github.com/whchien/funda-scraper"
+DESCRIPTION = "FundaScaper provides you the easiest way to perform web scraping from Funda, the Dutch housing website."
 EMAIL = "locriginal@gmail.com"
-AUTHOR = "WillChien"
-REQUIRES_PYTHON = ">=3.6.0"
+AUTHOR = "Will Chien"
+REQUIRES_PYTHON = ">=3.7.0"
 
-# Except, perhaps the License and Trove Classifiers!
-# If you do change the License, remember to change the
-# Trove Classifier for that!
-long_description = DESCRIPTION
-
-# Load the package's VERSION file as a dictionary.
 about = {}
 ROOT_DIR = Path(__file__).resolve().parent
 REQUIREMENTS_DIR = ROOT_DIR / 'requirements'
 PACKAGE_DIR = ROOT_DIR / 'funda_scraper'
+long_description = (ROOT_DIR / "README.md").read_text()
 with open(PACKAGE_DIR / "VERSION") as f:
     _version = f.read().strip()
     about["__version__"] = _version
@@ -47,9 +42,9 @@ setup(
     install_requires=list_reqs(),
     extras_require={},
     include_package_data=True,
-    license="BSD-3",
+    license="gpl-3.0",
     classifiers=[
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",

@@ -1,3 +1,5 @@
+"""Configuration used for scraping """
+
 from pathlib import Path
 
 from diot import Diot

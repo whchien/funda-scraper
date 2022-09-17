@@ -1,7 +1,0 @@
-diot>=0.1.5
-PyYAML>=5.0
-requests>=2
-beautifulsoup4>=4.11
-tqdm>=4.42.0
-pandas>=1.2
-lxml>=4

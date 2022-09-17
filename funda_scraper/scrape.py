@@ -1,3 +1,4 @@
+"""Main funda scraper module"""
 import multiprocessing as mp
 import os
 import pandas as pd
@@ -14,7 +15,7 @@ from tqdm.contrib.concurrent import process_map
 
 class FundaScraper:
     """
-    Handles the main scraping function from the website.
+    Handles the main scraping function.
     """
 
     def __init__(
@@ -22,7 +23,7 @@ class FundaScraper:
         area: str = None,
         want_to: str = "buy",
         n_pages: int = 1,
-        find_past: bool = True,
+        find_past: bool = False,
     ):
         self.area = area.lower().replace(" ", "-") if isinstance(area, str) else area
         self.want_to = want_to
@@ -33,12 +34,11 @@ class FundaScraper:
         self.clean_df = pd.DataFrame()
         self.base_url = config.base_url
         self.selectors = config.css_selector
-        self.check_dir()
 
     def __repr__(self):
         return (
             f"FundaScraper(area={self.area}, "
-            f"to_buy={self.to_buy}, "
+            f"want_to={self.want_to}, "
             f"n_pages={self.n_pages}, "
             f"use_past_data={self.find_past})"
         )
@@ -59,6 +59,7 @@ class FundaScraper:
 
     @property
     def to_buy(self) -> bool:
+        """Whether to buy or not"""
         if self.want_to.lower() in ["buy", "koop", "b"]:
             return True
         elif self.want_to.lower() in ["rent", "huur", "r"]:
@@ -67,13 +68,14 @@ class FundaScraper:
             raise ValueError("'want_to' must be 'either buy' or 'rent'.")
 
     @staticmethod
-    def check_dir() -> None:
+    def _check_dir() -> None:
         """Check whether a temporary directory for data"""
         if not os.path.exists("data"):
             os.makedirs("data")
 
     @staticmethod
-    def get_urls_from_one_page(url: str) -> List[str]:
+    def _get_links_from_one_page(url: str) -> List[str]:
+        """Scrape all the available housing items from one Funda search page."""
         response = requests.get(url, headers=config.header)
         soup = BeautifulSoup(response.text, "lxml")
         house = soup.find_all(attrs={"data-object-url-tracking": "resultlist"})
@@ -87,6 +89,7 @@ class FundaScraper:
         n_pages: int = None,
         find_past: bool = None,
     ) -> None:
+        """Overwrite or initialise the searching scope."""
         if area is not None:
             self.area = area
         if want_to is not None:
@@ -96,16 +99,17 @@ class FundaScraper:
         if find_past is not None:
             self.find_past = find_past
 
-    def get_urls_from_n_pages(self) -> None:
+    def fetch_links(self) -> None:
+        """Find all the available links across multiple pages. """
         if self.area is None or self.want_to is None:
             raise ValueError("You haven't set the area and what you're looking for.")
 
-        logger.info("*** Start to retrieve urls for all pages *** ")
+        logger.info("*** Phase 1: Fetch all the available links from all pages *** ")
 
         urls = []
         main_url = self.site_url["close"] if self.find_past else self.site_url["open"]
         for i in tqdm(range(0, self.n_pages + 1)):
-            item_list = self.get_urls_from_one_page(main_url + f"p{i}")
+            item_list = self._get_links_from_one_page(main_url + f"p{i}")
             if len(item_list) == 0:
                 self.n_pages = i
                 break
@@ -118,12 +122,15 @@ class FundaScraper:
 
     @staticmethod
     def get_value(soup: BeautifulSoup, selector: str) -> str:
+        """Use CSS selector to find certain features."""
         try:
             return soup.select(selector)[0].text
         except IndexError:
             return "na"
 
     def scrape_from_url(self, url: str) -> List[str]:
+        """Scrape all the features from one house item given a link. """
+
         # Initialize for each page
         response = requests.get(url, headers=config.header)
         soup = BeautifulSoup(response.text, "lxml")
@@ -171,16 +178,14 @@ class FundaScraper:
         return result
 
     def scrape_pages(self) -> None:
-        logger.info("*** Start scraping results ***")
+        """Scrape all the content acoss multiple pages."""
+
+        logger.info("*** Phase 2: Start scraping results from individual links ***")
         df = pd.DataFrame({key: [] for key in self.selectors.keys()})
 
         # Scrape pages with multiprocessing to improve efficiency
         pools = mp.cpu_count()
-        # content = process_map(self.scrape_from_url, self.links, max_workers=pools)
-        with mp.Pool(pools) as p:
-            content = list(tqdm(p.map(
-                self.scrape_from_url, self.links
-            )))
+        content = process_map(self.scrape_from_url, self.links, max_workers=pools)
 
         for i, c in enumerate(content):
             df.loc[len(df)] = c
@@ -190,34 +195,47 @@ class FundaScraper:
         logger.info(f"*** All scraping done: {df.shape[0]} results ***")
         self.raw_df = df
 
-    def save_to_csv(self, filepath: str = None) -> None:
-        date = str(datetime.datetime.now().date()).replace("-", "")
-        if self.find_past:
-            if self.to_buy:
-                status = "sold"
-            else:
-                status = "rented"
-        else:
-            if self.to_buy:
-                status = "selling"
-            else:
-                status = "renting"
-
+    def save_csv(self, df: pd.DataFrame, filepath: str = None) -> None:
+        """Save the result to a .csv file."""
         if filepath is None:
+            self._check_dir()
+            date = str(datetime.datetime.now().date()).replace("-", "")
+            if self.find_past:
+                if self.to_buy:
+                    status = "sold"
+                else:
+                    status = "rented"
+            else:
+                if self.to_buy:
+                    status = "selling"
+                else:
+                    status = "renting"
             filepath = (
                 f"./data/houseprice_{date}_{self.area}_{status}_{len(self.links)}.csv"
             )
-        self.raw_df.to_csv(filepath, index=False)
+        df.to_csv(filepath, index=False)
         logger.info(f"*** File saved: {filepath}. ***")
 
-    def run(self, raw_data: bool = False) -> pd.DataFrame:
-        self.get_urls_from_n_pages()
+    def run(self, raw_data: bool = False, save: bool = False, filepath: str = None) -> pd.DataFrame:
+        """Scrape all links and all content."""
+        self.fetch_links()
         self.scrape_pages()
 
         if raw_data:
+            if save:
+                self.save_csv(self.raw_df, filepath)
             return self.raw_df
         else:
-            logger.info("Cleaning data..")
+            logger.info("*** Cleaning data ***")
             clean_df = preprocess_data(df=self.raw_df, is_past=self.find_past)
             self.clean_df = clean_df
+            if save:
+                self.save_csv(self.clean_df, filepath)
             return clean_df
+        logger.info("*** Done! ***")
+
+
+if __name__ == "__main__":
+    scraper = FundaScraper(area="amsterdam", want_to="rent", find_past=False, n_pages=1)
+    df = scraper.run()
+    print(df.head())

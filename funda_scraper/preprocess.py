@@ -1,3 +1,6 @@
+"""Preprocess raw data scraped from Funda"""
+from typing import Any
+
 import pandas as pd
 from funda_scraper.config.core import config
 from datetime import datetime
@@ -5,6 +8,7 @@ from datetime import timedelta
 
 
 def clean_price(x: str) -> int:
+    """Clean the 'price' and transform from string to integer."""
     try:
         return int(str(x).split(" ")[1].replace(",", ""))
     except ValueError:
@@ -14,6 +18,7 @@ def clean_price(x: str) -> int:
 
 
 def clean_year(x: str) -> int:
+    """Clean the 'year' and transform from string to integer"""
     if len(x) == 4:
         return int(x)
     elif x.find("-") != -1:
@@ -25,6 +30,7 @@ def clean_year(x: str) -> int:
 
 
 def clean_living_area(x: str) -> int:
+    """Clean the 'living_area' and transform from string to integer"""
     try:
         return int(str(x).replace(",", "").split(" m²")[0])
     except ValueError:
@@ -34,6 +40,7 @@ def clean_living_area(x: str) -> int:
 
 
 def find_n_room(x: str) -> int:
+    """Find the number of rooms from a string"""
     if x.find("room") != -1:
         return int(str(x).split("room")[0].strip())
     else:
@@ -41,6 +48,7 @@ def find_n_room(x: str) -> int:
 
 
 def find_n_bedroom(x: str) -> int:
+    """Find the number of bedrooms from a string"""
     if x.find("bedroom") != -1:
         return int(x.split(" ")[2].replace("(", ""))
     else:
@@ -48,13 +56,15 @@ def find_n_bedroom(x: str) -> int:
 
 
 def find_n_bathroom(x: str) -> int:
+    """Find the number of bathrooms from a string"""
     if x.find("bathroom") != -1:
         return int(str(x).split("bathroom")[0].strip())
     else:
         return 0
 
 
-def fix_typo(x: str) -> str:
+def map_dutch_month(x: str) -> str:
+    """Map the month from Dutch to English."""
     month_mapping = {
         "januari": "January",
         "februari": "February",
@@ -72,11 +82,13 @@ def fix_typo(x: str) -> str:
 
 
 def get_neighbor(x: str) -> str:
+    """Find the neighborhood name."""
     city = x.split("/")[0].replace("-", " ")
     return x.lower().split(city)[-1]
 
 
 def clean_energy_label(x: str) -> str:
+    """Clean the energy labels."""
     try:
         x = x.split(" ")[0]
         if x.find("A+") != -1:
@@ -87,7 +99,8 @@ def clean_energy_label(x: str) -> str:
         return x
 
 
-def clean_list_date(x):
+def clean_list_date(x: str) -> Any:
+    """Transform the date from string to datetime object."""
     def delta_now(d):
         t = timedelta(days=d)
         return datetime.now() - t
@@ -109,9 +122,18 @@ def clean_list_date(x):
 
 
 def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
+    """
+    Clean the raw dataframe from scraping.
+    Indicate whether it includes historical data sicne the columns would be different.
+
+    :param df: raw dataframe from scraping
+    :param is_past: whether it scraped past data
+    :return: clean dataframe
+    """
 
     df = df.dropna()
     keep_cols = config.keep_cols.selling_data
+    keep_cols_sold = keep_cols + config.keep_cols.sold_data
 
     # Info
     df["house_id"] = df["url"].apply(lambda x: int(x.split("/")[-2].split("-")[1]))
@@ -146,13 +168,15 @@ def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
     df["house_age"] = 2023 - df["year_built"]
 
     if not is_past:
+        # Only check current data
         df["date_list"] = df.listed_since.apply(clean_list_date)
         df = df[df["date_list"] != "na"]
         df["date_list"] = pd.to_datetime(df["date_list"])
 
     else:
+        # Only check past data
         df = df[(df["date_sold"] != "na") & (df["date_list"] != "na")]
-        df["date_sold"] = df["date_sold"].apply(fix_typo)
+        df["date_sold"] = df["date_sold"].apply(map_dutch_month)
         df = df.dropna()
         df["date_list"] = pd.to_datetime(df["date_list"])
         df["date_sold"] = pd.to_datetime(df["date_sold"])
@@ -162,11 +186,9 @@ def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
         # Term
         df["term_days"] = df["date_sold"] - df["date_list"]
         df["term_days"] = df["term_days"].apply(lambda x: x.days)
-
-        keep_cols += config.keep_cols.sold_data
+        keep_cols = keep_cols_sold
 
     df["ym_list"] = df["date_list"].apply(lambda x: x.to_period("M").to_timestamp())
     df["year_list"] = df["date_list"].apply(lambda x: x.year)
-    keep_cols = list(set(keep_cols))
 
     return df[keep_cols].reset_index(drop=True)
