@@ -16,7 +16,7 @@ scraper = FundaScraper(area="amsterdam", want_to="rent", find_past="False")
 df = scraper.run()
 df.head()
 ```
-![image](static/example_df.png)
+![image](https://github.com/whchien/funda-scraper/blob/main/static/example_df.png)
 
 You can pass several arguments to `FundaScraper()` for customized scraping:
 - `area`: Specify the city or specific area you want to look for, eg. Amsterdam, Utrecht, Rotterdam, etc
