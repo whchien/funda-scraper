@@ -27,7 +27,7 @@ You can pass several arguments to `FundaScraper()` for customized scraping:
 
 ## Advanced usage
 
-You can check the [example notebook](https://github.com/whchien/funda-scraper/tree/main/notebooks) for further details. 
-Please give me a star if you find this project helpful. 
+You can check the [example notebook](https://colab.research.google.com/drive/1hNzJJRWxD59lrbeDpfY1OUpBz0NktmfW?usp=sharing) for further details. 
+Please give me a [star](https://github.com/whchien/funda-scraper) if you find this project helpful. 
 
 
