@@ -12,7 +12,7 @@ pip install funda-scraper
 ```
 from funda_scraper import FundaScraper
 
-scraper = FundaScraper(area="amsterdam", want_to="rent", find_past="False")
+scraper = FundaScraper(area="amsterdam", want_to="rent", find_past=False)
 df = scraper.run()
 df.head()
 ```
