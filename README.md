@@ -1,4 +1,5 @@
 # FundaScraper
+
 `FundaScaper` provides you the easiest way to perform web scraping from Funda, the Dutch housing website. 
 You can find listings from either house-buyer or rental market, and you can find historical data from the past few year.
 
@@ -16,7 +17,7 @@ scraper = FundaScraper(area="amsterdam", want_to="rent", find_past=False)
 df = scraper.run()
 df.head()
 ```
-![image](https://github.com/whchien/funda-scraper/blob/main/static/example_df.png)
+![image](https://i.imgur.com/mmN9mjQ.png)
 
 You can pass several arguments to `FundaScraper()` for customized scraping:
 - `area`: Specify the city or specific area you want to look for, eg. Amsterdam, Utrecht, Rotterdam, etc
