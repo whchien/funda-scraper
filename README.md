@@ -5,7 +5,7 @@ You can find listings from either house-buyer or rental market, and you can find
 
 Please note:
 1. Scraping this website is only allowed for personal use (as per Funda's Terms and Conditions).
-2. Any commercial use of this Python package is strictly prohibited. The author holds no liability for any misuse of the package.
+2. Any commercial use of this Python package is prohibited. The author holds no liability for any misuse of the package.
 
 
 ## Install
