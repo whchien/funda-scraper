@@ -3,6 +3,10 @@
 `FundaScaper` provides you the easiest way to perform web scraping from Funda, the Dutch housing website. 
 You can find listings from either house-buyer or rental market, and you can find historical data from the past few year.
 
+Please note:
+1. Scraping this website is only allowed for personal use (as per Funda's Terms and Conditions).
+2. Any commerical usage of this data is not allowed. The package owner does not hold liability and responsibility for any kind of misuse. 
+
 
 ## Install
 ```
