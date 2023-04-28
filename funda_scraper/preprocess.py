@@ -149,7 +149,7 @@ def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
     df["price_m2"] = round(df.price / df.living_area, 1)
 
     # Location
-    df["zip"] = df["zip_code"].apply(lambda x: x[:4])
+    df["zip"] = df["zip_code"].apply(lambda x: x[:7])
 
     # House layout
     df["room"] = df["num_of_rooms"].apply(find_n_room)
