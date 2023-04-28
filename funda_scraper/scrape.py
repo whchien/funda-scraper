@@ -28,7 +28,7 @@ class FundaScraper:
         self.area = area.lower().replace(" ", "-") if isinstance(area, str) else area
         self.want_to = want_to
         self.find_past = find_past
-        self.n_pages = min(max(n_pages, 1), 999)
+        self.n_pages = min(max(n_pages, 1), 10000)
         self.links: List[str] = []
         self.raw_df = pd.DataFrame()
         self.clean_df = pd.DataFrame()
