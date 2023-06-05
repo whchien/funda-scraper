@@ -1,6 +1,8 @@
 # FundaScraper
 
 [![Build Status](https://app.travis-ci.com/whchien/funda-scraper.svg?branch=main)](https://app.travis-ci.com/whchien/funda-scraper)
+[![codecov](https://codecov.io/gh/whchien/funda-scraper/branch/main/graph/badge.svg?token=QUKTDyeUqp)](https://codecov.io/gh/whchien/funda-scraper)
+
 
 `FundaScaper` provides you the easiest way to perform web scraping from Funda, the Dutch housing website. 
 You can find listings from either house-buyer or rental market, and you can find historical data from the past few year.
