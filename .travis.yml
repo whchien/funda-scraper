@@ -2,9 +2,13 @@ language: python
 python:
   - "3.8"
 install:
+  - pip install requirements_test.txt
   - pip install -e .
   - pip install pytest pytest-cov codecov
 script:
-  - pytest tests
+  - pytest --cov funda_scraper tests
+  - curl -Os https://uploader.codecov.io/latest/linux/codecov
+  - chmod +x codecov
+  - ./codecov -t ${CODECOV_TOKEN}
 after_success:
   - codecov
