@@ -2,7 +2,6 @@ language: python
 python:
   - "3.8"
 install:
-  - pip install requirements_test.txt
   - pip install -e .
   - pip install pytest pytest-cov codecov
 script:
