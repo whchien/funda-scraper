@@ -13,7 +13,7 @@ from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
 
-class FundaScraper:
+class FundaScraper(object):
     """
     Handles the main scraping function.
     """
