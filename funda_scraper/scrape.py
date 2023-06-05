@@ -100,7 +100,7 @@ class FundaScraper(object):
             self.find_past = find_past
 
     def fetch_links(self) -> None:
-        """Find all the available links across multiple pages. """
+        """Find all the available links across multiple pages."""
         if self.area is None or self.want_to is None:
             raise ValueError("You haven't set the area and what you're looking for.")
 
@@ -129,7 +129,7 @@ class FundaScraper(object):
             return "na"
 
     def scrape_from_url(self, url: str) -> List[str]:
-        """Scrape all the features from one house item given a link. """
+        """Scrape all the features from one house item given a link."""
 
         # Initialize for each page
         response = requests.get(url, headers=config.header)
@@ -216,7 +216,9 @@ class FundaScraper(object):
         df.to_csv(filepath, index=False)
         logger.info(f"*** File saved: {filepath}. ***")
 
-    def run(self, raw_data: bool = False, save: bool = False, filepath: str = None) -> pd.DataFrame:
+    def run(
+        self, raw_data: bool = False, save: bool = False, filepath: str = None
+    ) -> pd.DataFrame:
         """Scrape all links and all content."""
         self.fetch_links()
         self.scrape_pages()

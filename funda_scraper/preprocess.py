@@ -101,11 +101,17 @@ def clean_energy_label(x: str) -> str:
 
 def clean_list_date(x: str) -> Any:
     """Transform the date from string to datetime object."""
+
     def delta_now(d):
         t = timedelta(days=d)
         return datetime.now() - t
+
     try:
-        if x.find("€") != -1 or x.find("na") != -1 or x.find("Indefinite duration") != -1:
+        if (
+            x.find("€") != -1
+            or x.find("na") != -1
+            or x.find("Indefinite duration") != -1
+        ):
             return "na"
         elif x.find("month") != -1:
             return delta_now(int(x.split("month")[0].strip()[0]) * 30)
