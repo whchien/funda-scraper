@@ -1,4 +1,5 @@
 """Main funda scraper module"""
+import json
 import multiprocessing as mp
 import os
 import pandas as pd
@@ -49,12 +50,12 @@ class FundaScraper(object):
         if self.to_buy:
             return {
                 "close": f"{self.base_url}/koop/verkocht/{self.area}/",
-                "open": f"{self.base_url}/koop/{self.area}/",
+                "open": f"{self.base_url}/zoeken/koop?selected_area={self.area}/",
             }
         else:
             return {
                 "close": f"{self.base_url}/huur/{self.area}/verhuurd/",
-                "open": f"{self.base_url}/huur/{self.area}/",
+                "open": f"{self.base_url}/zoeken/huur?selected_area={self.area}/",
             }
 
     @property
@@ -78,9 +79,11 @@ class FundaScraper(object):
         """Scrape all the available housing items from one Funda search page."""
         response = requests.get(url, headers=config.header)
         soup = BeautifulSoup(response.text, "lxml")
-        house = soup.find_all(attrs={"data-object-url-tracking": "resultlist"})
-        item_list = [h.get("href") for h in house]
-        return list(set(item_list))
+
+        script_tag = soup.find_all("script", {"type": "application/ld+json"})[0]
+        json_data = json.loads(script_tag.contents[0])
+        urls = [item['url'] for item in json_data['itemListElement']]
+        return list(set(urls))
 
     def init(
         self,
@@ -99,17 +102,16 @@ class FundaScraper(object):
         if find_past is not None:
             self.find_past = find_past
 
-    def fetch_links(self) -> None:
+    def fetch_all_links(self) -> None:
         """Find all the available links across multiple pages."""
         if self.area is None or self.want_to is None:
             raise ValueError("You haven't set the area and what you're looking for.")
 
         logger.info("*** Phase 1: Fetch all the available links from all pages *** ")
-
         urls = []
         main_url = self.site_url["close"] if self.find_past else self.site_url["open"]
         for i in tqdm(range(0, self.n_pages + 1)):
-            item_list = self._get_links_from_one_page(main_url + f"p{i}")
+            item_list = self._get_links_from_one_page(f"{main_url}&search_result={i}")
             if len(item_list) == 0:
                 self.n_pages = i
                 break
@@ -118,21 +120,21 @@ class FundaScraper(object):
         logger.info(
             f"*** Got all the urls. {len(urls)} houses found in {self.n_pages} pages. ***"
         )
-        self.links = ["https://www.funda.nl" + url for url in urls]
+        self.links = urls
 
     @staticmethod
-    def get_value(soup: BeautifulSoup, selector: str) -> str:
+    def get_value_from_css(soup: BeautifulSoup, selector: str) -> str:
         """Use CSS selector to find certain features."""
         try:
             return soup.select(selector)[0].text
         except IndexError:
             return "na"
 
-    def scrape_from_url(self, url: str) -> List[str]:
+    def scrape_one_link(self, link: str) -> List[str]:
         """Scrape all the features from one house item given a link."""
 
         # Initialize for each page
-        response = requests.get(url, headers=config.header)
+        response = requests.get(link, headers=config.header)
         soup = BeautifulSoup(response.text, "lxml")
 
         # Get the value according to respective CSS selectors
@@ -142,37 +144,37 @@ class FundaScraper(object):
             else ".fd-align-items-center:nth-child(7) span"
         )
         result = [
-            url,
-            self.get_value(soup, self.selectors.price),
-            self.get_value(soup, self.selectors.address),
-            self.get_value(soup, self.selectors.descrip),
-            self.get_value(soup, list_since_selector).replace("\n", ""),
-            self.get_value(soup, self.selectors.zip_code)
+            link,
+            self.get_value_from_css(soup, self.selectors.price),
+            self.get_value_from_css(soup, self.selectors.address),
+            self.get_value_from_css(soup, self.selectors.descrip),
+            self.get_value_from_css(soup, list_since_selector).replace("\n", ""),
+            self.get_value_from_css(soup, self.selectors.zip_code)
             .replace("\n", "")
             .replace("\r        ", ""),
-            self.get_value(soup, self.selectors.size),
-            self.get_value(soup, self.selectors.year),
-            self.get_value(soup, self.selectors.living_area),
-            self.get_value(soup, self.selectors.kind_of_house),
-            self.get_value(soup, self.selectors.building_type),
-            self.get_value(soup, self.selectors.num_of_rooms).replace("\n", ""),
-            self.get_value(soup, self.selectors.num_of_bathrooms).replace("\n", ""),
-            self.get_value(soup, self.selectors.layout),
-            self.get_value(soup, self.selectors.energy_label).replace(
+            self.get_value_from_css(soup, self.selectors.size),
+            self.get_value_from_css(soup, self.selectors.year),
+            self.get_value_from_css(soup, self.selectors.living_area),
+            self.get_value_from_css(soup, self.selectors.kind_of_house),
+            self.get_value_from_css(soup, self.selectors.building_type),
+            self.get_value_from_css(soup, self.selectors.num_of_rooms).replace("\n", ""),
+            self.get_value_from_css(soup, self.selectors.num_of_bathrooms).replace("\n", ""),
+            self.get_value_from_css(soup, self.selectors.layout),
+            self.get_value_from_css(soup, self.selectors.energy_label).replace(
                 "\r\n        ", ""
             ),
-            self.get_value(soup, self.selectors.insulation).replace("\n", ""),
-            self.get_value(soup, self.selectors.heating).replace("\n", ""),
-            self.get_value(soup, self.selectors.ownership).replace("\n", ""),
-            self.get_value(soup, self.selectors.exteriors),
-            self.get_value(soup, self.selectors.parking),
-            self.get_value(soup, self.selectors.neighborhood_name),
-            self.get_value(soup, self.selectors.date_list),
-            self.get_value(soup, self.selectors.date_sold),
-            self.get_value(soup, self.selectors.term),
-            self.get_value(soup, self.selectors.price_sold),
-            self.get_value(soup, self.selectors.last_ask_price).replace("\n", ""),
-            self.get_value(soup, self.selectors.last_ask_price_m2).split("\r")[0],
+            self.get_value_from_css(soup, self.selectors.insulation).replace("\n", ""),
+            self.get_value_from_css(soup, self.selectors.heating).replace("\n", ""),
+            self.get_value_from_css(soup, self.selectors.ownership).replace("\n", ""),
+            self.get_value_from_css(soup, self.selectors.exteriors),
+            self.get_value_from_css(soup, self.selectors.parking),
+            self.get_value_from_css(soup, self.selectors.neighborhood_name),
+            self.get_value_from_css(soup, self.selectors.date_list),
+            self.get_value_from_css(soup, self.selectors.date_sold),
+            self.get_value_from_css(soup, self.selectors.term),
+            self.get_value_from_css(soup, self.selectors.price_sold),
+            self.get_value_from_css(soup, self.selectors.last_ask_price).replace("\n", ""),
+            self.get_value_from_css(soup, self.selectors.last_ask_price_m2).split("\r")[0],
         ]
 
         return result
@@ -185,7 +187,7 @@ class FundaScraper(object):
 
         # Scrape pages with multiprocessing to improve efficiency
         pools = mp.cpu_count()
-        content = process_map(self.scrape_from_url, self.links, max_workers=pools)
+        content = process_map(self.scrape_one_link, self.links, max_workers=pools)
 
         for i, c in enumerate(content):
             df.loc[len(df)] = c
@@ -219,25 +221,34 @@ class FundaScraper(object):
     def run(
         self, raw_data: bool = False, save: bool = False, filepath: str = None
     ) -> pd.DataFrame:
-        """Scrape all links and all content."""
-        self.fetch_links()
+        """
+        Scrape all links and all content.
+
+        :param raw_data: if true, the data won't be post-processed
+        :param save: if true, the data will be saved as a csv file
+        :param filepath: the name for the file
+        :return: the (post-processed) dataframe from scraping
+        """
+        self.fetch_all_links()
         self.scrape_pages()
 
         if raw_data:
-            if save:
-                self.save_csv(self.raw_df, filepath)
-            return self.raw_df
+            df = self.raw_df
         else:
             logger.info("*** Cleaning data ***")
-            clean_df = preprocess_data(df=self.raw_df, is_past=self.find_past)
-            self.clean_df = clean_df
-            if save:
-                self.save_csv(self.clean_df, filepath)
-            return clean_df
+            df = preprocess_data(df=self.raw_df, is_past=self.find_past)
+            self.clean_df = df
+
+        if save:
+            self.save_csv(df, filepath)
+
         logger.info("*** Done! ***")
+        return df
 
 
 if __name__ == "__main__":
-    scraper = FundaScraper(area="amsterdam", want_to="rent", find_past=False, n_pages=1)
-    df = scraper.run()
-    print(df.head())
+    scraper = FundaScraper(area="amsterdam", want_to="buy", find_past=False, n_pages=1)
+    # scraper.fetch_links()
+    # result = scraper.scrape_one_link("https://www.funda.nl/koop/haarlem/huis-42282691-meeuwenstraat-85-garage/")
+    df = scraper.run(raw_data=False)
+    print(len(df))
