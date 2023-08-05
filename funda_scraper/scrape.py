@@ -206,6 +206,8 @@ class FundaScraper(object):
 
         df["city"] = self.area
         df["log_id"] = datetime.datetime.now().strftime("%Y%m-%d%H-%M%S")
+        if not self.find_past:
+            df = df.drop(["term", "price_sold", "date_sold"], axis=1)
         logger.info(f"*** All scraping done: {df.shape[0]} results ***")
         self.raw_df = df
 

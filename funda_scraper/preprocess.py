@@ -1,5 +1,4 @@
 """Preprocess raw data scraped from Funda"""
-import locale
 import re
 from datetime import datetime, timedelta
 from typing import Union
@@ -8,8 +7,6 @@ import pandas as pd
 from dateutil.parser import parse
 
 from funda_scraper.config.core import config
-
-locale.setlocale(locale.LC_TIME, "nl_NL")
 
 
 def clean_price(x: str) -> int:
@@ -198,6 +195,8 @@ def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
     if is_past:
         # Only check past data
         df = df[(df["date_sold"] != "na") & (df["date_list"] != "na")]
+        df["date_list"] = df["date_list"].apply(map_dutch_month)
+        df["date_sold"] = df["date_sold"].apply(map_dutch_month)
         df["date_list"] = df["date_list"].apply(clean_list_date)
         df["date_sold"] = df["date_sold"].apply(clean_list_date)
         df = df.dropna()
@@ -210,14 +209,17 @@ def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
         df["term_days"] = df["date_sold"] - df["date_list"]
         df["term_days"] = df["term_days"].apply(lambda x: x.days)
         keep_cols = keep_cols_sold
+        df["date_sold"] = df["date_sold"].dt.date
 
     else:
         # Only check current data
-        df["date_list"] = df["listed_since"].apply(clean_list_date)
+        df["date_list"] = df["listed_since"].apply(map_dutch_month)
+        df["date_list"] = df["date_list"].apply(clean_list_date)
         df = df[df["date_list"] != "na"]
         df["date_list"] = pd.to_datetime(df["date_list"])
 
     df["ym_list"] = df["date_list"].apply(lambda x: x.to_period("M").to_timestamp())
     df["year_list"] = df["date_list"].apply(lambda x: x.year)
+    df["date_list"] = df["date_list"].dt.date
 
     return df[keep_cols].reset_index(drop=True)
