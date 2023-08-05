@@ -216,10 +216,10 @@ class FundaScraper(object):
         """
         Scrape all links and all content.
 
-        :param raw_data: if true, the data won't be post-processed
+        :param raw_data: if true, the data won't be pre-processed
         :param save: if true, the data will be saved as a csv file
         :param filepath: the name for the file
-        :return: the (post-processed) dataframe from scraping
+        :return: the (pre-processed) dataframe from scraping
         """
         self.fetch_all_links()
         self.scrape_pages()
@@ -240,7 +240,5 @@ class FundaScraper(object):
 
 if __name__ == "__main__":
     scraper = FundaScraper(area="amsterdam", want_to="buy", find_past=True, n_pages=1)
-    # scraper.fetch_links()
-    # result = scraper.scrape_one_link("https://www.funda.nl/koop/haarlem/huis-42282691-meeuwenstraat-85-garage/")
     df = scraper.run(raw_data=False)
-    print(len(df))
+    print(df.head())
