@@ -152,7 +152,7 @@ def clean_list_date(x: str) -> Union[datetime, str]:
 def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
     """
     Clean the raw dataframe from scraping.
-    Indicate whether it includes historical data sicne the columns would be different.
+    Indicate whether the historical data is included since the columns would be different.
 
     :param df: raw dataframe from scraping
     :param is_past: whether it scraped past data

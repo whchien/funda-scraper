@@ -1,10 +1,13 @@
+import pandas as pd
 import pytest
+
+from funda_scraper.preprocess import preprocess_data
 
 
 @pytest.fixture
 def input_data():
     data = {
-        "url": ["https://www.funda.nl/koop/dummy"],
+        "url": ["https://www.funda.nl/koop/utrecht/appartement-00000000-dummy-100/"],
         "price": ["na"],
         "address": ["dummy 10"],
         "descrip": ["dummy"],
@@ -18,7 +21,7 @@ def input_data():
         "num_of_rooms": ["4 kamers (3 slaapkamers)"],
         "num_of_bathrooms": ["1 badkamer en 1 apart toilet"],
         "layout": ["Aantal kamers 4 kamers (3 slaapkamers)"],
-        "energy_label": ["B"],
+        "energy_label": ["A++++"],
         "insulation": ["Dubbel glas"],
         "heating": ["dummy"],
         "ownership": ["dummy"],
@@ -34,3 +37,16 @@ def input_data():
         "city": ["utrecht"],
         "log_id": ["dummy"],
     }
+    return pd.DataFrame(data)
+
+
+class TestPreprocessData:
+    def test_is_past_true(self, input_data):
+        df = preprocess_data(df=input_data, is_past=True)
+        assert df.shape == (1, 25)
+        assert df["house_type"].item() == "appartement"
+        assert df["price"].item() == 500000
+        assert df["room"].item() == 4
+        assert df["bedroom"].item() == 3
+        assert df["term_days"].item() == 13
+        assert df["energy_label"].item() == ">A+"
