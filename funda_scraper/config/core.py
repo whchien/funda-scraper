@@ -2,9 +2,10 @@
 
 from pathlib import Path
 
-from diot import Diot
 import yaml
+from diot import Diot
 from yaml.loader import SafeLoader
+
 import funda_scraper
 
 PACKAGE_ROOT = Path(funda_scraper.__file__).resolve().parent

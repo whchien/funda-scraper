@@ -1,15 +1,15 @@
 """Preprocess raw data scraped from Funda"""
-from typing import Any, Union
+import locale
+import re
+from datetime import datetime, timedelta
+from typing import Union
 
 import pandas as pd
-from funda_scraper.config.core import config
-from datetime import datetime
-from datetime import timedelta
-import locale
 from dateutil.parser import parse
 
-# Set the locale to Dutch
-locale.setlocale(locale.LC_TIME, 'nl_NL')
+from funda_scraper.config.core import config
+
+locale.setlocale(locale.LC_TIME, "nl_NL")
 
 
 def clean_price(x: str) -> int:
@@ -44,28 +44,32 @@ def clean_living_area(x: str) -> int:
         return 0
 
 
+def find_keyword_from_regex(x: str, pattern: str) -> int:
+    result = re.findall(pattern, x)
+    if len(result) > 0:
+        result: str = "".join(result[0])
+        x = result.split(" ")[0]
+    else:
+        x = 0
+    return int(x)
+
+
 def find_n_room(x: str) -> int:
     """Find the number of rooms from a string"""
-    if x.find("room") != -1:
-        return int(str(x).split("room")[0].strip())
-    else:
-        return 0
+    pattern = r"(\d{1,2}\s{1}kamers{0,1})|(\d{1,2}\s{1}rooms{0,1})"
+    return find_keyword_from_regex(x, pattern)
 
 
 def find_n_bedroom(x: str) -> int:
     """Find the number of bedrooms from a string"""
-    if x.find("bedroom") != -1:
-        return int(x.split(" ")[2].replace("(", ""))
-    else:
-        return 0
+    pattern = r"(\d{1,2}\s{1}slaapkamers{0,1})|(\d{1,2}\s{1}bedrooms{0,1})"
+    return find_keyword_from_regex(x, pattern)
 
 
 def find_n_bathroom(x: str) -> int:
     """Find the number of bathrooms from a string"""
-    if x.find("bathroom") != -1:
-        return int(str(x).split("bathroom")[0].strip())
-    else:
-        return 0
+    pattern = r"(\d{1,2}\s{1}badkamers{0,1})|(\d{1,2}\s{1}bathrooms{0,1})"
+    return find_keyword_from_regex(x, pattern)
 
 
 def map_dutch_month(x: str) -> str:
@@ -97,9 +101,8 @@ def clean_energy_label(x: str) -> str:
     try:
         x = x.split(" ")[0]
         if x.find("A+") != -1:
-            return ">A+"
-        else:
-            return x
+            x = ">A+"
+        return x
     except IndexError:
         return x
 
@@ -118,7 +121,7 @@ def clean_list_date(x: str) -> Union[datetime, str]:
         "donderdag": "Thursday",
         "vrijdag": "Friday",
         "zaterdag": "Saturday",
-        "zondag": "Sunday"
+        "zondag": "Sunday",
     }
 
     try:
@@ -128,25 +131,22 @@ def clean_list_date(x: str) -> Union[datetime, str]:
             delta = datetime.now().weekday() - parsed_date.weekday()
             return delta_now(delta)
 
-        elif (
-                x.find("€") != -1
-                or x.find("na") != -1
-                or x.find("Indefinite duration") != -1
-        ):
-            return "na"
+        elif len(re.findall("(€)|(na)|(Indefinite duration)", x)) >= 1:
+            x = "na"
         elif x.find("month") != -1:
-            return delta_now(int(x.split("month")[0].strip()[0]) * 30)
+            x = delta_now(int(x.split("month")[0].strip()[0]) * 30)
         elif x.find("week") != -1:
-            return delta_now(int(x.split("month")[0].strip()[0]) * 7)
+            x = delta_now(int(x.split("month")[0].strip()[0]) * 7)
         elif x.find("Today") != -1 or x.find("Vandaag") != -1:
-            return delta_now(1)
+            x = delta_now(1)
         elif x.find("day") != -1:
-            return delta_now(int(x.split("month")[0].strip()))
+            x = delta_now(int(x.split("month")[0].strip()))
         else:
-            return datetime.strptime(x, "%d %B %Y")
+            x = datetime.strptime(x, "%d %B %Y")
+        return x
 
     except ValueError:
-        return x
+        return "na"
 
 
 def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
@@ -171,9 +171,9 @@ def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
     # Price
     price_col = "price_sold" if is_past else "price"
     df["price"] = df[price_col].apply(clean_price)
-    # df = df[df["price"] != 0]
+    df = df[df["price"] != 0]
     df["living_area"] = df["living_area"].apply(clean_living_area)
-    # df = df[df["living_area"] != 0]
+    df = df[df["living_area"] != 0]
     df["price_m2"] = round(df.price / df.living_area, 1)
 
     # Location
@@ -198,7 +198,8 @@ def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
     if is_past:
         # Only check past data
         df = df[(df["date_sold"] != "na") & (df["date_list"] != "na")]
-        df["date_sold"] = df["date_sold"].apply(map_dutch_month)
+        df["date_list"] = df["date_list"].apply(clean_list_date)
+        df["date_sold"] = df["date_sold"].apply(clean_list_date)
         df = df.dropna()
         df["date_list"] = pd.to_datetime(df["date_list"])
         df["date_sold"] = pd.to_datetime(df["date_sold"])
@@ -212,7 +213,7 @@ def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
 
     else:
         # Only check current data
-        df["date_list"] = df.listed_since.apply(clean_list_date)
+        df["date_list"] = df["listed_since"].apply(clean_list_date)
         df = df[df["date_list"] != "na"]
         df["date_list"] = pd.to_datetime(df["date_list"])
 
