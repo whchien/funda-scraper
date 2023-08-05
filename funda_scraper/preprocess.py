@@ -181,12 +181,8 @@ def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
     df["bedroom"] = df["num_of_rooms"].apply(find_n_bedroom)
     df["bathroom"] = df["num_of_bathrooms"].apply(find_n_bathroom)
     df["energy_label"] = df["energy_label"].apply(clean_energy_label)
-    df["has_balcony"] = df["exteriors"].apply(
-        lambda x: 1 if str(x).find("Balcony present") != -1 else 0
-    )
-    df["has_garden"] = df["exteriors"].apply(
-        lambda x: 1 if str(x).find("garden") != -1 else 0
-    )
+    df["has_balcony"] = df["exteriors"].apply(lambda x: 1 if str(x).find("Balcony present") != -1 else 0)
+    df["has_garden"] = df["exteriors"].apply(lambda x: 1 if str(x).find("garden") != -1 else 0)
 
     # Time
     df["year_built"] = df["year"].apply(clean_year).astype(int)

@@ -5,4 +5,4 @@ pytest-cov
 codecov
 black
 isort
-mypy
+pre-commit
