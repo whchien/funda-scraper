@@ -1,16 +1,18 @@
 """Preprocess raw data scraped from Funda"""
-from typing import Any
+import re
+from datetime import datetime, timedelta
+from typing import Union
 
 import pandas as pd
+from dateutil.parser import parse
+
 from funda_scraper.config.core import config
-from datetime import datetime
-from datetime import timedelta
 
 
 def clean_price(x: str) -> int:
     """Clean the 'price' and transform from string to integer."""
     try:
-        return int(str(x).split(" ")[1].replace(",", ""))
+        return int(str(x).split(" ")[1].replace(".", ""))
     except ValueError:
         return 0
     except IndexError:
@@ -39,28 +41,32 @@ def clean_living_area(x: str) -> int:
         return 0
 
 
+def find_keyword_from_regex(x: str, pattern: str) -> int:
+    result = re.findall(pattern, x)
+    if len(result) > 0:
+        result: str = "".join(result[0])
+        x = result.split(" ")[0]
+    else:
+        x = 0
+    return int(x)
+
+
 def find_n_room(x: str) -> int:
     """Find the number of rooms from a string"""
-    if x.find("room") != -1:
-        return int(str(x).split("room")[0].strip())
-    else:
-        return 0
+    pattern = r"(\d{1,2}\s{1}kamers{0,1})|(\d{1,2}\s{1}rooms{0,1})"
+    return find_keyword_from_regex(x, pattern)
 
 
 def find_n_bedroom(x: str) -> int:
     """Find the number of bedrooms from a string"""
-    if x.find("bedroom") != -1:
-        return int(x.split(" ")[2].replace("(", ""))
-    else:
-        return 0
+    pattern = r"(\d{1,2}\s{1}slaapkamers{0,1})|(\d{1,2}\s{1}bedrooms{0,1})"
+    return find_keyword_from_regex(x, pattern)
 
 
 def find_n_bathroom(x: str) -> int:
     """Find the number of bathrooms from a string"""
-    if x.find("bathroom") != -1:
-        return int(str(x).split("bathroom")[0].strip())
-    else:
-        return 0
+    pattern = r"(\d{1,2}\s{1}badkamers{0,1})|(\d{1,2}\s{1}bathrooms{0,1})"
+    return find_keyword_from_regex(x, pattern)
 
 
 def map_dutch_month(x: str) -> str:
@@ -92,37 +98,50 @@ def clean_energy_label(x: str) -> str:
     try:
         x = x.split(" ")[0]
         if x.find("A+") != -1:
-            return ">A+"
-        else:
-            return x
+            x = ">A+"
+        return x
     except IndexError:
         return x
 
 
-def clean_list_date(x: str) -> Any:
+def clean_list_date(x: str) -> Union[datetime, str]:
     """Transform the date from string to datetime object."""
 
-    def delta_now(d):
+    def delta_now(d: int):
         t = timedelta(days=d)
         return datetime.now() - t
 
+    weekdays_dict = {
+        "maandag": "Monday",
+        "dinsdag": "Tuesday",
+        "woensdag": "Wednesday",
+        "donderdag": "Thursday",
+        "vrijdag": "Friday",
+        "zaterdag": "Saturday",
+        "zondag": "Sunday",
+    }
+
     try:
-        if (
-            x.find("€") != -1
-            or x.find("na") != -1
-            or x.find("Indefinite duration") != -1
-        ):
-            return "na"
+        if x.lower() in weekdays_dict.keys():
+            date_string = weekdays_dict.get(x.lower())
+            parsed_date = parse(date_string, fuzzy=True)
+            delta = datetime.now().weekday() - parsed_date.weekday()
+            return delta_now(delta)
+
+        elif len(re.findall("(€)|(na)|(Indefinite duration)", x)) >= 1:
+            x = "na"
         elif x.find("month") != -1:
-            return delta_now(int(x.split("month")[0].strip()[0]) * 30)
+            x = delta_now(int(x.split("month")[0].strip()[0]) * 30)
         elif x.find("week") != -1:
-            return delta_now(int(x.split("month")[0].strip()[0]) * 7)
-        elif x.find("Today") != -1:
-            return delta_now(1)
+            x = delta_now(int(x.split("month")[0].strip()[0]) * 7)
+        elif x.find("Today") != -1 or x.find("Vandaag") != -1:
+            x = delta_now(1)
         elif x.find("day") != -1:
-            return delta_now(int(x.split("month")[0].strip()))
+            x = delta_now(int(x.split("month")[0].strip()))
         else:
-            return datetime.strptime(x, "%B %d, %Y")
+            x = datetime.strptime(x, "%d %B %Y")
+        return x
+
     except ValueError:
         return "na"
 
@@ -130,7 +149,7 @@ def clean_list_date(x: str) -> Any:
 def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
     """
     Clean the raw dataframe from scraping.
-    Indicate whether it includes historical data sicne the columns would be different.
+    Indicate whether the historical data is included since the columns would be different.
 
     :param df: raw dataframe from scraping
     :param is_past: whether it scraped past data
@@ -171,18 +190,15 @@ def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
 
     # Time
     df["year_built"] = df["year"].apply(clean_year).astype(int)
-    df["house_age"] = 2023 - df["year_built"]
+    df["house_age"] = datetime.now().year - df["year_built"]
 
-    if not is_past:
-        # Only check current data
-        df["date_list"] = df.listed_since.apply(clean_list_date)
-        df = df[df["date_list"] != "na"]
-        df["date_list"] = pd.to_datetime(df["date_list"])
-
-    else:
+    if is_past:
         # Only check past data
         df = df[(df["date_sold"] != "na") & (df["date_list"] != "na")]
+        df["date_list"] = df["date_list"].apply(map_dutch_month)
         df["date_sold"] = df["date_sold"].apply(map_dutch_month)
+        df["date_list"] = df["date_list"].apply(clean_list_date)
+        df["date_sold"] = df["date_sold"].apply(clean_list_date)
         df = df.dropna()
         df["date_list"] = pd.to_datetime(df["date_list"])
         df["date_sold"] = pd.to_datetime(df["date_sold"])
@@ -193,8 +209,17 @@ def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
         df["term_days"] = df["date_sold"] - df["date_list"]
         df["term_days"] = df["term_days"].apply(lambda x: x.days)
         keep_cols = keep_cols_sold
+        df["date_sold"] = df["date_sold"].dt.date
+
+    else:
+        # Only check current data
+        df["date_list"] = df["listed_since"].apply(map_dutch_month)
+        df["date_list"] = df["date_list"].apply(clean_list_date)
+        df = df[df["date_list"] != "na"]
+        df["date_list"] = pd.to_datetime(df["date_list"])
 
     df["ym_list"] = df["date_list"].apply(lambda x: x.to_period("M").to_timestamp())
     df["year_list"] = df["date_list"].apply(lambda x: x.year)
+    df["date_list"] = df["date_list"].dt.date
 
     return df[keep_cols].reset_index(drop=True)
