@@ -5,6 +5,7 @@ install:
   - pip install -e .
   - pip install pytest pytest-cov codecov
 script:
+  - export LC_ALL=C
   - pytest --cov funda_scraper tests
   - curl -Os https://uploader.codecov.io/latest/linux/codecov
   - chmod +x codecov
