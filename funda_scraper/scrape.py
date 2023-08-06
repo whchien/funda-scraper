@@ -51,13 +51,13 @@ class FundaScraper(object):
         """Return the corresponding urls."""
         if self.to_buy:
             return {
-                "close": f'{self.base_url}/zoeken/koop?selected_area=%5B%22{self.area}%22%5D&availability="unavailable"',
-                "open": f"{self.base_url}/zoeken/koop?selected_area=%5B%22{self.area}%22%5D/",
+                "close": f'{self.base_url}/zoeken/koop?selected_area="{self.area}"&availability="unavailable"',
+                "open": f'{self.base_url}/zoeken/koop?selected_area="{self.area}"/',
             }
         else:
             return {
-                "close": f'{self.base_url}/zoeken/huur?selected_area=%5B%22{self.area}"&availability="unavailable"',
-                "open": f"{self.base_url}/zoeken/huur?selected_area=%5B%22{self.area}%22%5D/",
+                "close": f'{self.base_url}/zoeken/huur?selected_area="{self.area}"&availability="unavailable"',
+                "open": f'{self.base_url}/zoeken/huur?selected_area="{self.area}"/',
             }
 
     @property
@@ -239,6 +239,8 @@ class FundaScraper(object):
 
 
 if __name__ == "__main__":
-    scraper = FundaScraper(area="amsterdam", want_to="buy", find_past=True, n_pages=1)
-    df = scraper.run(raw_data=False)
-    print(df.head())
+    scraper = FundaScraper(area="rotterdam", want_to="rent", find_past=True, n_pages=1)
+    scraper.fetch_all_links()
+    print(scraper.links)
+    # df = scraper.run(raw_data=False)
+    # print(df.head())
