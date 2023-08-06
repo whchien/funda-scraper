@@ -19,8 +19,6 @@ keep_cols:
     - bathroom
     - living_area
     - energy_label
-    - has_balcony
-    - has_garden
     - zip
     - address
     - year_built
@@ -34,7 +32,7 @@ css_selector:
   price: ".object-header__price"
   address: ".object-header__title"
   descrip: ".object-description-body"
-  listed_since: ".fd-flex~ .fd-align-items-center:nth-child(6)"
+  listed_since: ".fd-align-items-center:nth-child(6) span"
   zip_code: ".object-header__subtitle"
   size: ".fd-m-right-xl--bp-m .fd-text--nowrap"
   year: ".fd-align-items-center~ .fd-align-items-center .fd-m-right-xs"

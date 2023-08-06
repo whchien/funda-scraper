@@ -12,7 +12,7 @@ from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
 from funda_scraper.config.core import config
-from funda_scraper.preprocess import preprocess_data
+from funda_scraper.preprocess import preprocess_data, clean_list_date
 from funda_scraper.utils import logger
 
 
@@ -148,38 +148,36 @@ class FundaScraper(object):
         soup = BeautifulSoup(response.text, "lxml")
 
         # Get the value according to respective CSS selectors
-        list_since_selector = (
-            self.selectors.listed_since
-            if self.to_buy
-            else ".fd-align-items-center:nth-child(7) span"
-        )
+        if self.to_buy:
+            if self.find_past:
+                list_since_selector = self.selectors.date_list
+            else:
+                list_since_selector = self.selectors.listed_since
+        else:
+            if self.find_past:
+                list_since_selector = ".fd-align-items-center:nth-child(9) span"
+            else:
+                list_since_selector = ".fd-align-items-center:nth-child(7) span"
+
         result = [
             link,
             self.get_value_from_css(soup, self.selectors.price),
             self.get_value_from_css(soup, self.selectors.address),
             self.get_value_from_css(soup, self.selectors.descrip),
-            self.get_value_from_css(soup, list_since_selector).replace("\n", ""),
-            self.get_value_from_css(soup, self.selectors.zip_code)
-            .replace("\n", "")
-            .replace("\r        ", ""),
+            self.get_value_from_css(soup, list_since_selector),
+            self.get_value_from_css(soup, self.selectors.zip_code),
             self.get_value_from_css(soup, self.selectors.size),
             self.get_value_from_css(soup, self.selectors.year),
             self.get_value_from_css(soup, self.selectors.living_area),
             self.get_value_from_css(soup, self.selectors.kind_of_house),
             self.get_value_from_css(soup, self.selectors.building_type),
-            self.get_value_from_css(soup, self.selectors.num_of_rooms).replace(
-                "\n", ""
-            ),
-            self.get_value_from_css(soup, self.selectors.num_of_bathrooms).replace(
-                "\n", ""
-            ),
+            self.get_value_from_css(soup, self.selectors.num_of_rooms),
+            self.get_value_from_css(soup, self.selectors.num_of_bathrooms),
             self.get_value_from_css(soup, self.selectors.layout),
-            self.get_value_from_css(soup, self.selectors.energy_label).replace(
-                "\r\n        ", ""
-            ),
-            self.get_value_from_css(soup, self.selectors.insulation).replace("\n", ""),
-            self.get_value_from_css(soup, self.selectors.heating).replace("\n", ""),
-            self.get_value_from_css(soup, self.selectors.ownership).replace("\n", ""),
+            self.get_value_from_css(soup, self.selectors.energy_label),
+            self.get_value_from_css(soup, self.selectors.insulation),
+            self.get_value_from_css(soup, self.selectors.heating),
+            self.get_value_from_css(soup, self.selectors.ownership),
             self.get_value_from_css(soup, self.selectors.exteriors),
             self.get_value_from_css(soup, self.selectors.parking),
             self.get_value_from_css(soup, self.selectors.neighborhood_name),
@@ -187,14 +185,22 @@ class FundaScraper(object):
             self.get_value_from_css(soup, self.selectors.date_sold),
             self.get_value_from_css(soup, self.selectors.term),
             self.get_value_from_css(soup, self.selectors.price_sold),
-            self.get_value_from_css(soup, self.selectors.last_ask_price).replace(
-                "\n", ""
-            ),
+            self.get_value_from_css(soup, self.selectors.last_ask_price),
             self.get_value_from_css(soup, self.selectors.last_ask_price_m2).split("\r")[
                 0
             ],
         ]
 
+        if clean_list_date(result[4]) == "na":
+            for i in range(6, 16):
+                selector = f".fd-align-items-center:nth-child({i}) span"
+                update_list_since = self.get_value_from_css(soup, selector)
+                if clean_list_date(update_list_since) == "na":
+                    pass
+                else:
+                    result[4] = update_list_since
+
+        result = [r.replace("\n", "").replace("\r", "").strip() for r in result]
         return result
 
     def scrape_pages(self) -> None:
@@ -210,7 +216,7 @@ class FundaScraper(object):
         for i, c in enumerate(content):
             df.loc[len(df)] = c
 
-        df["city"] = self.area
+        df["city"] = df['url'].map(lambda x: x.split("/")[4])
         df["log_id"] = datetime.datetime.now().strftime("%Y%m-%d%H-%M%S")
         if not self.find_past:
             df = df.drop(["term", "price_sold", "date_sold"], axis=1)
@@ -239,7 +245,7 @@ class FundaScraper(object):
         logger.info(f"*** File saved: {filepath}. ***")
 
     def run(
-        self, raw_data: bool = False, save: bool = False, filepath: str = None
+        self, raw_data: bool = True, save: bool = False, filepath: str = None
     ) -> pd.DataFrame:
         """
         Scrape all links and all content.
@@ -268,7 +274,7 @@ class FundaScraper(object):
 
 if __name__ == "__main__":
     scraper = FundaScraper(area="utrecht", want_to="rent", find_past=False, n_pages=1)
-    scraper.fetch_all_links()
-    print(scraper.links)
-    # df = scraper.run(raw_data=False)
-    # print(df.head())
+    # scraper.fetch_all_links()
+    # print(scraper.links)
+    df = scraper.run(raw_data=False)
+    print(df.head())
