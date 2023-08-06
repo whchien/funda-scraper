@@ -52,12 +52,12 @@ class FundaScraper(object):
         if self.to_buy:
             return {
                 "close": f'{self.base_url}/zoeken/koop/?selected_area="{self.area}"&availability="unavailable"',
-                "open": f'{self.base_url}/zoeken/koop?selected_area="{self.area}"/',
+                "open": f'{self.base_url}/zoeken/koop?selected_area=%5B"{self.area}"%5D/',
             }
         else:
             return {
                 "close": f'{self.base_url}/zoeken/huur?selected_area="{self.area}"&availability="unavailable"',
-                "open": f'{self.base_url}/zoeken/huur?selected_area="{self.area}"/',
+                "open": f'{self.base_url}/zoeken/huur?selected_area=%5B"{self.area}"%5D/',
             }
 
     @property
