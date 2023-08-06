@@ -28,6 +28,7 @@ class FundaScraper(object):
         n_pages: int = 1,
         find_past: bool = False,
     ):
+        self.main_url = None
         self.area = area.lower().replace(" ", "-") if isinstance(area, str) else area
         self.want_to = want_to
         self.find_past = find_past
@@ -111,7 +112,12 @@ class FundaScraper(object):
 
         logger.info("*** Phase 1: Fetch all the available links from all pages *** ")
         urls = []
-        main_url = self.site_url["close"] if self.find_past else self.site_url["open"]
+        query = "koop" if self.to_buy else "huur"
+        main_url = f"{self.base_url}/zoeken/{query}?selected_area=%22{self.area}%22"
+        if self.find_past:
+            main_url = f"{main_url}&availability=%22unavailable%22"
+        self.main_url = main_url
+
         for i in tqdm(range(0, self.n_pages + 1)):
             item_list = self._get_links_from_one_parent(f"{main_url}&search_result={i}")
             if len(item_list) == 0:
@@ -261,8 +267,8 @@ class FundaScraper(object):
 
 
 if __name__ == "__main__":
-    scraper = FundaScraper(area="amsterdam", want_to="buy", find_past=True, n_pages=1)
-    # scraper.fetch_all_links()
-    # print(scraper.links)
-    df = scraper.run(raw_data=False)
-    print(df.head())
+    scraper = FundaScraper(area="utrecht", want_to="rent", find_past=False, n_pages=1)
+    scraper.fetch_all_links()
+    print(scraper.links)
+    # df = scraper.run(raw_data=False)
+    # print(df.head())
