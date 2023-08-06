@@ -245,7 +245,7 @@ class FundaScraper(object):
         logger.info(f"*** File saved: {filepath}. ***")
 
     def run(
-        self, raw_data: bool = True, save: bool = False, filepath: str = None
+        self, raw_data: bool = False, save: bool = False, filepath: str = None
     ) -> pd.DataFrame:
         """
         Scrape all links and all content.
@@ -274,7 +274,5 @@ class FundaScraper(object):
 
 if __name__ == "__main__":
     scraper = FundaScraper(area="utrecht", want_to="rent", find_past=False, n_pages=1)
-    # scraper.fetch_all_links()
-    # print(scraper.links)
     df = scraper.run(raw_data=False)
     print(df.head())
