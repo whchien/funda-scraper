@@ -25,15 +25,15 @@ pip install funda-scraper
 git clone https://github.com/whchien/funda-scraper.git
 cd funda-scraper
 export PYTHONPATH=${PWD}
-python funda_scraper/scrape.py
+python funda_scraper/scrape.py --area amsterdam --want_to rent --find_past False --n_pages 1
 ```
 
 ## Quickstart 
 ```
 from funda_scraper import FundaScraper
 
-scraper = FundaScraper(area="amsterdam", want_to="rent", find_past=False)
-df = scraper.run(raw_data=False)
+scraper = FundaScraper(area="amsterdam", want_to="rent", find_past=False, n_pages=3)
+df = scraper.run(raw_data=False, save=True, filepath="test.csv")
 df.head()
 ```
 ![image](https://i.imgur.com/mmN9mjQ.png)

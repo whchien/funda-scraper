@@ -1,9 +1,10 @@
 """Main funda scraper module"""
+import argparse
 import datetime
 import json
 import multiprocessing as mp
 import os
-from typing import Dict, List
+from typing import List, Literal
 
 import pandas as pd
 import requests
@@ -22,17 +23,17 @@ class FundaScraper(object):
     """
 
     def __init__(
-        self,
-        area: str = None,
-        want_to: str = "buy",
-        n_pages: int = 1,
-        find_past: bool = False,
+            self,
+            area: str,
+            want_to: Literal["buy", "rent", "koop", "huur", "b", "r", "k", "h"],
+            n_pages: int = 1,
+            find_past: bool = False,
     ):
         self.main_url = None
-        self.area = area.lower().replace(" ", "-") if isinstance(area, str) else area
+        self.area = area.lower().replace(" ", "-")
         self.want_to = want_to
         self.find_past = find_past
-        self.n_pages = min(max(n_pages, 1), 999)
+        self.n_pages = min(max(n_pages, 1), 9999)
         self.links: List[str] = []
         self.raw_df = pd.DataFrame()
         self.clean_df = pd.DataFrame()
@@ -44,29 +45,15 @@ class FundaScraper(object):
             f"FundaScraper(area={self.area}, "
             f"want_to={self.want_to}, "
             f"n_pages={self.n_pages}, "
-            f"use_past_data={self.find_past})"
+            f"find_past={self.find_past})"
         )
-
-    @property
-    def site_url(self) -> Dict[str, str]:
-        """Return the corresponding urls."""
-        if self.to_buy:
-            return {
-                "close": f"{self.base_url}/zoeken/koop?selected_area=\"{self.area}\"&availability=\"unavailable\"",
-                "open": f"{self.base_url}/zoeken/koop?selected_area=\"{self.area}\"/",
-            }
-        else:
-            return {
-                "close": f"{self.base_url}/zoeken/huur?selected_area=\"{self.area}\"&availability=\"unavailable\"",
-                "open": f"{self.base_url}/zoeken/huur?selected_area=\"{self.area}\"/",
-            }
 
     @property
     def to_buy(self) -> bool:
         """Whether to buy or not"""
-        if self.want_to.lower() in ["buy", "koop", "b"]:
+        if self.want_to.lower() in ["buy", "koop", "b", "k"]:
             return True
-        elif self.want_to.lower() in ["rent", "huur", "r"]:
+        elif self.want_to.lower() in ["rent", "huur", "r", "h"]:
             return False
         else:
             raise ValueError("'want_to' must be 'either buy' or 'rent'.")
@@ -89,11 +76,11 @@ class FundaScraper(object):
         return list(set(urls))
 
     def init(
-        self,
-        area: str = None,
-        want_to: str = None,
-        n_pages: int = None,
-        find_past: bool = None,
+            self,
+            area: str = None,
+            want_to: str = None,
+            n_pages: int = None,
+            find_past: bool = None,
     ) -> None:
         """Overwrite or initialise the searching scope."""
         if area is not None:
@@ -245,7 +232,7 @@ class FundaScraper(object):
         logger.info(f"*** File saved: {filepath}. ***")
 
     def run(
-        self, raw_data: bool = False, save: bool = False, filepath: str = None
+            self, raw_data: bool = False, save: bool = False, filepath: str = None
     ) -> pd.DataFrame:
         """
         Scrape all links and all content.
@@ -273,6 +260,37 @@ class FundaScraper(object):
 
 
 if __name__ == "__main__":
-    scraper = FundaScraper(area="utrecht", want_to="rent", find_past=False, n_pages=1)
-    df = scraper.run(raw_data=False)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--area",
+                        type=str,
+                        help="Specify which area you are looking for",
+                        default="amsterdam")
+    parser.add_argument("--want_to",
+                        type=str,
+                        help="Specify you want to 'rent' or 'buy'",
+                        default="rent")
+    parser.add_argument("--find_past",
+                        type=bool,
+                        help="Indicate whether you want to use hisotrical data or not",
+                        default=False)
+    parser.add_argument("--n_pages",
+                        type=int,
+                        help="Specify how many pages you want to scrape",
+                        default=1)
+    parser.add_argument("--raw_data",
+                        type=bool,
+                        help="Indicate whether you want the raw scraping result or preprocessed one",
+                        default=False)
+    parser.add_argument("--save",
+                        type=bool,
+                        help="Indicate whether you want to save the data or not",
+                        default=True)
+
+    args = parser.parse_args()
+    scraper = FundaScraper(area=args.area,
+                           want_to=args.want_to,
+                           find_past=args.find_past,
+                           n_pages=args.n_pages)
+    df = scraper.run(raw_data=args.raw_data,
+                     save=args.save)
     print(df.head())
