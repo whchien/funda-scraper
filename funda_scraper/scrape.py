@@ -26,14 +26,16 @@ class FundaScraper(object):
             self,
             area: str,
             want_to: Literal["buy", "rent", "koop", "huur", "b", "r", "k", "h"],
-            n_pages: int = 1,
+            page_start: int = 1,
+            page_end: int = 1,
             find_past: bool = False,
     ):
         self.main_url = None
         self.area = area.lower().replace(" ", "-")
         self.want_to = want_to
         self.find_past = find_past
-        self.n_pages = min(max(n_pages, 1), 9999)
+        self.page_start = max(page_start, 1)
+        self.page_end = max(max(page_end, 1), page_start)
         self.links: List[str] = []
         self.raw_df = pd.DataFrame()
         self.clean_df = pd.DataFrame()
@@ -79,7 +81,8 @@ class FundaScraper(object):
             self,
             area: str = None,
             want_to: str = None,
-            n_pages: int = None,
+            page_start: int = None,
+            page_end: int = None,
             find_past: bool = None,
     ) -> None:
         """Overwrite or initialise the searching scope."""
@@ -87,8 +90,10 @@ class FundaScraper(object):
             self.area = area
         if want_to is not None:
             self.want_to = want_to
-        if n_pages is not None:
-            self.n_pages = n_pages
+        if page_start is not None:
+            self.page_start = page_start
+        if page_end is not None:
+            self.page_end = page_end
         if find_past is not None:
             self.find_past = find_past
 
@@ -105,15 +110,15 @@ class FundaScraper(object):
             main_url = f"{main_url}&availability=%22unavailable%22"
         self.main_url = main_url
 
-        for i in tqdm(range(0, self.n_pages + 1)):
+        for i in tqdm(range(self.page_start, self.page_end + 1)):
             item_list = self._get_links_from_one_parent(f"{main_url}&search_result={i}")
             if len(item_list) == 0:
-                self.n_pages = i
+                self.page_end = i
                 break
             urls += item_list
         urls = list(set(urls))
         logger.info(
-            f"*** Got all the urls. {len(urls)} houses found in {self.n_pages} pages. ***"
+            f"*** Got all the urls. {len(urls)} houses found from {self.page_start} to {self.page_end} ***"
         )
         self.links = urls
 
@@ -273,9 +278,13 @@ if __name__ == "__main__":
                         type=bool,
                         help="Indicate whether you want to use hisotrical data or not",
                         default=False)
-    parser.add_argument("--n_pages",
+    parser.add_argument("--page_start",
                         type=int,
-                        help="Specify how many pages you want to scrape",
+                        help="Specify which page to start scraping",
+                        default=1)
+    parser.add_argument("--page_end",
+                        type=int,
+                        help="Specify which page to end scraping",
                         default=1)
     parser.add_argument("--raw_data",
                         type=bool,
@@ -290,7 +299,8 @@ if __name__ == "__main__":
     scraper = FundaScraper(area=args.area,
                            want_to=args.want_to,
                            find_past=args.find_past,
-                           n_pages=args.n_pages)
+                           page_start=args.page_start,
+                           page_end=args.page_end)
     df = scraper.run(raw_data=args.raw_data,
                      save=args.save)
     print(df.head())

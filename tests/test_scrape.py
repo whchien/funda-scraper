@@ -4,7 +4,7 @@ from funda_scraper.scrape import FundaScraper
 
 class TestFundaScraper(object):
     def test_rent(self):
-        scraper = FundaScraper(area="amsterdam", want_to="rent", find_past=False, n_pages=1)
+        scraper = FundaScraper(area="amsterdam", want_to="rent", find_past=False, page_start=1, page_end=1)
         df = scraper.run(raw_data=True)
         assert len(scraper.links) == 15
         assert df.shape == (15, 26)
@@ -15,7 +15,7 @@ class TestFundaScraper(object):
         assert df.shape[1] == 19
 
     def test_rent_past(self):
-        scraper = FundaScraper(area="amsterdam", want_to="rent", find_past=True, n_pages=1)
+        scraper = FundaScraper(area="amsterdam", want_to="rent", find_past=True, page_start=1, page_end=1)
         df = scraper.run(raw_data=True)
         assert len(scraper.links) == 15
         assert df.shape == (15, 29)
@@ -26,7 +26,7 @@ class TestFundaScraper(object):
         assert df.shape[1] == 23
 
     def test_buy(self):
-        scraper = FundaScraper(area="amsterdam", want_to="buy", find_past=False, n_pages=1)
+        scraper = FundaScraper(area="amsterdam", want_to="buy", find_past=False, page_start=1, page_end=1)
         df = scraper.run(raw_data=True)
         assert len(scraper.links) == 15
         assert df.shape == (15, 26)
@@ -37,7 +37,7 @@ class TestFundaScraper(object):
         assert df.shape[1] == 19
 
     def test_buy_past(self):
-        scraper = FundaScraper(area="amsterdam", want_to="buy", find_past=True, n_pages=1)
+        scraper = FundaScraper(area="amsterdam", want_to="buy", find_past=True, page_start=1, page_end=1)
         df = scraper.run(raw_data=True)
         assert len(scraper.links) == 15
         assert df.shape == (15, 29)
