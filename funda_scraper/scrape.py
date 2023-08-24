@@ -23,12 +23,12 @@ class FundaScraper(object):
     """
 
     def __init__(
-            self,
-            area: str,
-            want_to: Literal["buy", "rent", "koop", "huur", "b", "r", "k", "h"],
-            n_pages: int = 1,
-            page_start: int = 1,
-            find_past: bool = False,
+        self,
+        area: str,
+        want_to: Literal["buy", "rent", "koop", "huur", "b", "r", "k", "h"],
+        n_pages: int = 1,
+        page_start: int = 1,
+        find_past: bool = False,
     ):
         self.main_url = None
         self.area = area.lower().replace(" ", "-")
@@ -80,12 +80,12 @@ class FundaScraper(object):
         return list(set(urls))
 
     def init(
-            self,
-            area: str = None,
-            want_to: str = None,
-            page_start: int = None,
-            n_pages: int = None,
-            find_past: bool = None,
+        self,
+        area: str = None,
+        want_to: str = None,
+        page_start: int = None,
+        n_pages: int = None,
+        find_past: bool = None,
     ) -> None:
         """Overwrite or initialise the searching scope."""
         if area is not None:
@@ -210,7 +210,7 @@ class FundaScraper(object):
         for i, c in enumerate(content):
             df.loc[len(df)] = c
 
-        df["city"] = df['url'].map(lambda x: x.split("/")[4])
+        df["city"] = df["url"].map(lambda x: x.split("/")[4])
         df["log_id"] = datetime.datetime.now().strftime("%Y%m-%d%H-%M%S")
         if not self.find_past:
             df = df.drop(["term", "price_sold", "date_sold"], axis=1)
@@ -239,7 +239,7 @@ class FundaScraper(object):
         logger.info(f"*** File saved: {filepath}. ***")
 
     def run(
-            self, raw_data: bool = False, save: bool = False, filepath: str = None
+        self, raw_data: bool = False, save: bool = False, filepath: str = None
     ) -> pd.DataFrame:
         """
         Scrape all links and all content.
@@ -268,41 +268,50 @@ class FundaScraper(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--area",
-                        type=str,
-                        help="Specify which area you are looking for",
-                        default="amsterdam")
-    parser.add_argument("--want_to",
-                        type=str,
-                        help="Specify you want to 'rent' or 'buy'",
-                        default="rent")
-    parser.add_argument("--find_past",
-                        type=bool,
-                        help="Indicate whether you want to use hisotrical data or not",
-                        default=False)
-    parser.add_argument("--page_start",
-                        type=int,
-                        help="Specify which page to start scraping",
-                        default=1)
-    parser.add_argument("--n_pages",
-                        type=int,
-                        help="Specify how many pages to scrape",
-                        default=1)
-    parser.add_argument("--raw_data",
-                        type=bool,
-                        help="Indicate whether you want the raw scraping result or preprocessed one",
-                        default=False)
-    parser.add_argument("--save",
-                        type=bool,
-                        help="Indicate whether you want to save the data or not",
-                        default=True)
+    parser.add_argument(
+        "--area",
+        type=str,
+        help="Specify which area you are looking for",
+        default="amsterdam",
+    )
+    parser.add_argument(
+        "--want_to",
+        type=str,
+        help="Specify you want to 'rent' or 'buy'",
+        default="rent",
+    )
+    parser.add_argument(
+        "--find_past",
+        type=bool,
+        help="Indicate whether you want to use hisotrical data or not",
+        default=False,
+    )
+    parser.add_argument(
+        "--page_start", type=int, help="Specify which page to start scraping", default=1
+    )
+    parser.add_argument(
+        "--n_pages", type=int, help="Specify how many pages to scrape", default=1
+    )
+    parser.add_argument(
+        "--raw_data",
+        type=bool,
+        help="Indicate whether you want the raw scraping result or preprocessed one",
+        default=False,
+    )
+    parser.add_argument(
+        "--save",
+        type=bool,
+        help="Indicate whether you want to save the data or not",
+        default=True,
+    )
 
     args = parser.parse_args()
-    scraper = FundaScraper(area=args.area,
-                           want_to=args.want_to,
-                           find_past=args.find_past,
-                           page_start=args.page_start,
-                           n_pages=args.n_pages)
-    df = scraper.run(raw_data=args.raw_data,
-                     save=args.save)
+    scraper = FundaScraper(
+        area=args.area,
+        want_to=args.want_to,
+        find_past=args.find_past,
+        page_start=args.page_start,
+        n_pages=args.n_pages,
+    )
+    df = scraper.run(raw_data=args.raw_data, save=args.save)
     print(df.head())
