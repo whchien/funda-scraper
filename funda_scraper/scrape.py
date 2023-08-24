@@ -26,8 +26,8 @@ class FundaScraper(object):
             self,
             area: str,
             want_to: Literal["buy", "rent", "koop", "huur", "b", "r", "k", "h"],
+            n_pages: int = 1,
             page_start: int = 1,
-            page_end: int = 1,
             find_past: bool = False,
     ):
         self.main_url = None
@@ -35,7 +35,8 @@ class FundaScraper(object):
         self.want_to = want_to
         self.find_past = find_past
         self.page_start = max(page_start, 1)
-        self.page_end = max(max(page_end, 1), page_start)
+        self.n_pages = max(n_pages, 1)
+        self.page_end = self.page_start + self.n_pages - 1
         self.links: List[str] = []
         self.raw_df = pd.DataFrame()
         self.clean_df = pd.DataFrame()
@@ -47,6 +48,7 @@ class FundaScraper(object):
             f"FundaScraper(area={self.area}, "
             f"want_to={self.want_to}, "
             f"n_pages={self.n_pages}, "
+            f"page_start={self.page_start}, "
             f"find_past={self.find_past})"
         )
 
@@ -82,7 +84,7 @@ class FundaScraper(object):
             area: str = None,
             want_to: str = None,
             page_start: int = None,
-            page_end: int = None,
+            n_pages: int = None,
             find_past: bool = None,
     ) -> None:
         """Overwrite or initialise the searching scope."""
@@ -91,9 +93,9 @@ class FundaScraper(object):
         if want_to is not None:
             self.want_to = want_to
         if page_start is not None:
-            self.page_start = page_start
-        if page_end is not None:
-            self.page_end = page_end
+            self.page_start = max(page_start, 1)
+        if n_pages is not None:
+            self.n_pages = max(n_pages, 1)
         if find_past is not None:
             self.find_past = find_past
 
@@ -110,7 +112,7 @@ class FundaScraper(object):
             main_url = f"{main_url}&availability=%22unavailable%22"
         self.main_url = main_url
 
-        for i in tqdm(range(self.page_start, self.page_end + 1)):
+        for i in tqdm(range(self.page_start, self.page_start + self.n_pages)):
             item_list = self._get_links_from_one_parent(f"{main_url}&search_result={i}")
             if len(item_list) == 0:
                 self.page_end = i
@@ -282,9 +284,9 @@ if __name__ == "__main__":
                         type=int,
                         help="Specify which page to start scraping",
                         default=1)
-    parser.add_argument("--page_end",
+    parser.add_argument("--n_pages",
                         type=int,
-                        help="Specify which page to end scraping",
+                        help="Specify how many pages to scrape",
                         default=1)
     parser.add_argument("--raw_data",
                         type=bool,
@@ -300,7 +302,7 @@ if __name__ == "__main__":
                            want_to=args.want_to,
                            find_past=args.find_past,
                            page_start=args.page_start,
-                           page_end=args.page_end)
+                           n_pages=args.n_pages)
     df = scraper.run(raw_data=args.raw_data,
                      save=args.save)
     print(df.head())

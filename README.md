@@ -25,14 +25,14 @@ pip install funda-scraper
 git clone https://github.com/whchien/funda-scraper.git
 cd funda-scraper
 export PYTHONPATH=${PWD}
-python funda_scraper/scrape.py --area amsterdam --want_to rent --find_past False --page_start 1 --page_end 3
+python funda_scraper/scrape.py --area amsterdam --want_to rent --find_past False --page_start 1 --n_pages 3
 ```
 
 ## Quickstart 
 ```
 from funda_scraper import FundaScraper
 
-scraper = FundaScraper(area="amsterdam", want_to="rent", find_past=False, page_start=1, page_end=3)
+scraper = FundaScraper(area="amsterdam", want_to="rent", find_past=False, page_start=1, n_pages=3)
 df = scraper.run(raw_data=False, save=True, filepath="test.csv")
 df.head()
 ```
@@ -44,7 +44,7 @@ You can pass several arguments to `FundaScraper()` for customized scraping:
 - `want_to`: You can choose either `buy` or `rent`, which finds houses either for sale or for rent. 
 - `find_past`: Specify whether you want to find the data in the past or the ones in the market. If `True`, only historical data will be scraped. The default is `False`.
 - `page_start`: Indicate which page you want to start scraping. The default is `1`. 
-- `page_end`: Indicate which page you want to end scraping. The default is `1`. 
+- `n_pages`: Indicate how many page you want to scrape. The default is `1`. 
 
 The scraped raw result contains following information:
 - url
