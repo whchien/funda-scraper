@@ -44,7 +44,7 @@ def clean_living_area(x: str) -> int:
 def find_keyword_from_regex(x: str, pattern: str) -> int:
     result = re.findall(pattern, x)
     if len(result) > 0:
-        result: str = "".join(result[0])
+        result = "".join(result[0])
         x = result.split(" ")[0]
     else:
         x = 0

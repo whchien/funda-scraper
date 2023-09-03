@@ -4,7 +4,7 @@ import datetime
 import json
 import multiprocessing as mp
 import os
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 import pandas as pd
 import requests
@@ -13,7 +13,7 @@ from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
 from funda_scraper.config.core import config
-from funda_scraper.preprocess import preprocess_data, clean_list_date
+from funda_scraper.preprocess import clean_list_date, preprocess_data
 from funda_scraper.utils import logger
 
 
@@ -25,18 +25,24 @@ class FundaScraper(object):
     def __init__(
         self,
         area: str,
-        want_to: Literal["buy", "rent", "koop", "huur", "b", "r", "k", "h"],
-        n_pages: int = 1,
+        want_to: str,
         page_start: int = 1,
+        n_pages: int = 1,
         find_past: bool = False,
+        min_price: Optional[int] = None,
+        max_price: Optional[int] = None,
     ):
-        self.main_url = None
+        # Init attributes
         self.area = area.lower().replace(" ", "-")
         self.want_to = want_to
         self.find_past = find_past
         self.page_start = max(page_start, 1)
         self.n_pages = max(n_pages, 1)
         self.page_end = self.page_start + self.n_pages - 1
+        self.min_price = min_price
+        self.max_price = max_price
+
+        # Instantiate along the way
         self.links: List[str] = []
         self.raw_df = pd.DataFrame()
         self.clean_df = pd.DataFrame()
@@ -50,6 +56,8 @@ class FundaScraper(object):
             f"n_pages={self.n_pages}, "
             f"page_start={self.page_start}, "
             f"find_past={self.find_past})"
+            f"min_price={self.min_price})"
+            f"max_price={self.max_price})"
         )
 
     @property
@@ -60,7 +68,7 @@ class FundaScraper(object):
         elif self.want_to.lower() in ["rent", "huur", "r", "h"]:
             return False
         else:
-            raise ValueError("'want_to' must be 'either buy' or 'rent'.")
+            raise ValueError("'want_to' must be either 'buy' or 'rent'.")
 
     @staticmethod
     def _check_dir() -> None:
@@ -79,13 +87,15 @@ class FundaScraper(object):
         urls = [item["url"] for item in json_data["itemListElement"]]
         return list(set(urls))
 
-    def init(
+    def reset(
         self,
-        area: str = None,
-        want_to: str = None,
-        page_start: int = None,
-        n_pages: int = None,
-        find_past: bool = None,
+        area: Optional[str] = None,
+        want_to: Optional[str] = None,
+        page_start: Optional[int] = None,
+        n_pages: Optional[int] = None,
+        find_past: Optional[bool] = None,
+        min_price: Optional[int] = None,
+        max_price: Optional[int] = None,
     ) -> None:
         """Overwrite or initialise the searching scope."""
         if area is not None:
@@ -98,31 +108,51 @@ class FundaScraper(object):
             self.n_pages = max(n_pages, 1)
         if find_past is not None:
             self.find_past = find_past
+        if min_price is not None:
+            self.min_price = min_price
+        if max_price is not None:
+            self.max_price = max_price
 
-    def fetch_all_links(self) -> None:
+    def fetch_all_links(self, page_start: int = None, n_pages: int = None) -> None:
         """Find all the available links across multiple pages."""
-        if self.area is None or self.want_to is None:
-            raise ValueError("You haven't set the area and what you're looking for.")
+
+        page_start = self.page_start if page_start is None else page_start
+        n_pages = self.n_pages if n_pages is None else n_pages
 
         logger.info("*** Phase 1: Fetch all the available links from all pages *** ")
         urls = []
-        query = "koop" if self.to_buy else "huur"
-        main_url = f"{self.base_url}/zoeken/{query}?selected_area=%22{self.area}%22"
-        if self.find_past:
-            main_url = f"{main_url}&availability=%22unavailable%22"
-        self.main_url = main_url
+        main_url = self._build_main_query_url()
 
-        for i in tqdm(range(self.page_start, self.page_start + self.n_pages)):
-            item_list = self._get_links_from_one_parent(f"{main_url}&search_result={i}")
-            if len(item_list) == 0:
+        for i in tqdm(range(page_start, page_start + n_pages)):
+            try:
+                item_list = self._get_links_from_one_parent(
+                    f"{main_url}&search_result={i}"
+                )
+                urls += item_list
+            except IndexError:
                 self.page_end = i
+                logger.info(f"*** The last available page is {self.page_end} ***")
                 break
-            urls += item_list
+
         urls = list(set(urls))
         logger.info(
             f"*** Got all the urls. {len(urls)} houses found from {self.page_start} to {self.page_end} ***"
         )
         self.links = urls
+
+    def _build_main_query_url(self) -> str:
+        query = "koop" if self.to_buy else "huur"
+        main_url = f"{self.base_url}/zoeken/{query}?selected_area=%22{self.area}%22"
+
+        if self.find_past:
+            main_url = f"{main_url}&availability=%22unavailable%22"
+
+        if self.min_price is not None or self.max_price is not None:
+            min_price = "" if self.min_price is None else self.min_price
+            max_price = "" if self.max_price is None else self.max_price
+            main_url = f"{main_url}&price=%22{min_price}-{max_price}%22"
+
+        return main_url
 
     @staticmethod
     def get_value_from_css(soup: BeautifulSoup, selector: str) -> str:
@@ -185,6 +215,7 @@ class FundaScraper(object):
             ],
         ]
 
+        # Deal with list_since_selector especially, since its CSS varies sometimes
         if clean_list_date(result[4]) == "na":
             for i in range(6, 16):
                 selector = f".fd-align-items-center:nth-child({i}) span"
@@ -194,16 +225,18 @@ class FundaScraper(object):
                 else:
                     result[4] = update_list_since
 
+        # Clean up the retried result from one page
         result = [r.replace("\n", "").replace("\r", "").strip() for r in result]
         return result
 
     def scrape_pages(self) -> None:
         """Scrape all the content acoss multiple pages."""
 
-        logger.info("*** Phase 2: Start scraping results from individual links ***")
+        logger.info("*** Phase 2: Start scraping from individual links ***")
         df = pd.DataFrame({key: [] for key in self.selectors.keys()})
 
         # Scrape pages with multiprocessing to improve efficiency
+        # TODO: use asynctio instead
         pools = mp.cpu_count()
         content = process_map(self.scrape_one_link, self.links, max_workers=pools)
 
@@ -222,19 +255,9 @@ class FundaScraper(object):
         if filepath is None:
             self._check_dir()
             date = str(datetime.datetime.now().date()).replace("-", "")
-            if self.find_past:
-                if self.to_buy:
-                    status = "sold"
-                else:
-                    status = "rented"
-            else:
-                if self.to_buy:
-                    status = "selling"
-                else:
-                    status = "renting"
-            filepath = (
-                f"./data/houseprice_{date}_{self.area}_{status}_{len(self.links)}.csv"
-            )
+            status = "unavailable" if self.find_past else "unavailable"
+            want_to = "buy" if self.to_buy else "rent"
+            filepath = f"./data/houseprice_{date}_{self.area}_{want_to}_{status}_{len(self.links)}.csv"
         df.to_csv(filepath, index=False)
         logger.info(f"*** File saved: {filepath}. ***")
 
@@ -293,6 +316,12 @@ if __name__ == "__main__":
         "--n_pages", type=int, help="Specify how many pages to scrape", default=1
     )
     parser.add_argument(
+        "--min_price", type=int, help="Specify the min price", default=None
+    )
+    parser.add_argument(
+        "--max_price", type=int, help="Specify the max price", default=None
+    )
+    parser.add_argument(
         "--raw_data",
         type=bool,
         help="Indicate whether you want the raw scraping result or preprocessed one",
@@ -312,6 +341,8 @@ if __name__ == "__main__":
         find_past=args.find_past,
         page_start=args.page_start,
         n_pages=args.n_pages,
+        min_price=args.min_price,
+        max_price=args.max_price,
     )
     df = scraper.run(raw_data=args.raw_data, save=args.save)
     print(df.head())
