@@ -216,17 +216,21 @@ class FundaScraper(object):
         ]
 
         # Deal with list_since_selector especially, since its CSS varies sometimes
-        if clean_list_date(result[4]) == "na":
-            for i in range(6, 16):
-                selector = f".fd-align-items-center:nth-child({i}) span"
-                update_list_since = self.get_value_from_css(soup, selector)
-                if clean_list_date(update_list_since) == "na":
-                    pass
-                else:
-                    result[4] = update_list_since
+        # if clean_list_date(result[4]) == "na":
+        #     for i in range(6, 16):
+        #         selector = f".fd-align-items-center:nth-child({i}) span"
+        #         update_list_since = self.get_value_from_css(soup, selector)
+        #         if clean_list_date(update_list_since) == "na":
+        #             pass
+        #         else:
+        #             result[4] = update_list_since
+
+        photos_list = [p.get("data-lazy-srcset") for p in soup.select(self.selectors.photo)]
+        photos_string = ", ".join(photos_list)
 
         # Clean up the retried result from one page
         result = [r.replace("\n", "").replace("\r", "").strip() for r in result]
+        result.append(photos_string)
         return result
 
     def scrape_pages(self) -> None:

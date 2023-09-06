@@ -27,6 +27,7 @@ keep_cols:
 #    - ym_list
 #    - year_list
     - descrip
+    - photo
 css_selector:
   url: none
   price: ".object-header__price"
@@ -55,3 +56,4 @@ css_selector:
   price_sold: ".object-header__price--historic"
   last_ask_price: ".object-kenmerken-list:nth-child(2) .fd-align-items-center:nth-child(2)"
   last_ask_price_m2: ".object-kenmerken-list__asking-price"
+  photo: ".media-viewer-overview__section-list-item--photo img[data-lazy]"

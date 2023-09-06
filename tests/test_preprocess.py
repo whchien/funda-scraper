@@ -36,6 +36,7 @@ def input_data():
         "last_ask_price_m2": ["dummy"],
         "city": ["utrecht"],
         "log_id": ["dummy"],
+        "photo": ['dummy']
     }
     return pd.DataFrame(data)
 
@@ -43,7 +44,7 @@ def input_data():
 class TestPreprocessData:
     def test_is_past_true(self, input_data):
         df = preprocess_data(df=input_data, is_past=True)
-        assert df.shape == (1, 16)
+        assert df.shape == (1, 17)
         assert df["house_type"].item() == "appartement"
         assert df["price"].item() == 500000
         assert df["room"].item() == 4
