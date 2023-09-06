@@ -190,31 +190,31 @@ def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
     df["year_built"] = df["year"].apply(clean_year).astype(int)
     df["house_age"] = datetime.now().year - df["year_built"]
 
-    if is_past:
-        # Only check past data
-        df = df[(df["date_sold"] != "na") & (df["date_list"] != "na")]
-        df["date_list"] = df["date_list"].apply(clean_list_date)
-        df["date_sold"] = df["date_sold"].apply(clean_list_date)
-        df = df.dropna()
-        df["date_list"] = pd.to_datetime(df["date_list"])
-        df["date_sold"] = pd.to_datetime(df["date_sold"])
-        df["ym_sold"] = df["date_sold"].apply(lambda x: x.to_period("M").to_timestamp())
-        df["year_sold"] = df["date_sold"].apply(lambda x: x.year)
+    # if is_past:
+    #     # Only check past data
+    #     df = df[(df["date_sold"] != "na") & (df["date_list"] != "na")]
+    #     df["date_list"] = df["date_list"].apply(clean_list_date)
+    #     df["date_sold"] = df["date_sold"].apply(clean_list_date)
+    #     df = df.dropna()
+    #     df["date_list"] = pd.to_datetime(df["date_list"])
+    #     df["date_sold"] = pd.to_datetime(df["date_sold"])
+    #     df["ym_sold"] = df["date_sold"].apply(lambda x: x.to_period("M").to_timestamp())
+    #     df["year_sold"] = df["date_sold"].apply(lambda x: x.year)
+    #
+    #     # Term
+    #     df["term_days"] = df["date_sold"] - df["date_list"]
+    #     df["term_days"] = df["term_days"].apply(lambda x: x.days)
+    #     keep_cols = keep_cols_sold
+    #     df["date_sold"] = df["date_sold"].dt.date
+    #
+    # else:
+    #     # Only check current data
+    #     df["date_list"] = df["listed_since"].apply(clean_list_date)
+    #     df = df[df["date_list"] != "na"]
+    #     df["date_list"] = pd.to_datetime(df["date_list"])
 
-        # Term
-        df["term_days"] = df["date_sold"] - df["date_list"]
-        df["term_days"] = df["term_days"].apply(lambda x: x.days)
-        keep_cols = keep_cols_sold
-        df["date_sold"] = df["date_sold"].dt.date
-
-    else:
-        # Only check current data
-        df["date_list"] = df["listed_since"].apply(clean_list_date)
-        df = df[df["date_list"] != "na"]
-        df["date_list"] = pd.to_datetime(df["date_list"])
-
-    df["ym_list"] = df["date_list"].apply(lambda x: x.to_period("M").to_timestamp())
-    df["year_list"] = df["date_list"].apply(lambda x: x.year)
-    df["date_list"] = df["date_list"].dt.date
+    # df["ym_list"] = df["date_list"].apply(lambda x: x.to_period("M").to_timestamp())
+    # df["year_list"] = df["date_list"].apply(lambda x: x.year)
+    # df["date_list"] = df["date_list"].dt.date
 
     return df[keep_cols].reset_index(drop=True)
