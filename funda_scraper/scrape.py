@@ -31,6 +31,7 @@ class FundaScraper(object):
         find_past: bool = False,
         min_price: Optional[int] = None,
         max_price: Optional[int] = None,
+        days_since: Optional[int] = None,
     ):
         # Init attributes
         self.area = area.lower().replace(" ", "-")
@@ -41,6 +42,7 @@ class FundaScraper(object):
         self.page_end = self.page_start + self.n_pages - 1
         self.min_price = min_price
         self.max_price = max_price
+        self.days_since = days_since
 
         # Instantiate along the way
         self.links: List[str] = []
@@ -58,6 +60,7 @@ class FundaScraper(object):
             f"find_past={self.find_past})"
             f"min_price={self.min_price})"
             f"max_price={self.max_price})"
+            f"days_since={self.days_since})"
         )
 
     @property
@@ -69,6 +72,14 @@ class FundaScraper(object):
             return False
         else:
             raise ValueError("'want_to' must be either 'buy' or 'rent'.")
+
+    @property
+    def check_days_since(self) -> int:
+        """Whether days since complies"""
+        if self.days_since in [None, 1, 3, 5, 10, 30]:
+            return self.days_since
+        else:
+            raise ValueError("'days_since' must be either None, 1, 3, 5, 10 or 30.")
 
     @staticmethod
     def _check_dir() -> None:
@@ -96,6 +107,7 @@ class FundaScraper(object):
         find_past: Optional[bool] = None,
         min_price: Optional[int] = None,
         max_price: Optional[int] = None,
+        days_since: Optional[int] = None,
     ) -> None:
         """Overwrite or initialise the searching scope."""
         if area is not None:
@@ -112,6 +124,8 @@ class FundaScraper(object):
             self.min_price = min_price
         if max_price is not None:
             self.max_price = max_price
+        if days_since is not None:
+            self.days_since = days_since
 
     def fetch_all_links(self, page_start: int = None, n_pages: int = None) -> None:
         """Find all the available links across multiple pages."""
@@ -151,7 +165,10 @@ class FundaScraper(object):
             min_price = "" if self.min_price is None else self.min_price
             max_price = "" if self.max_price is None else self.max_price
             main_url = f"{main_url}&price=%22{min_price}-{max_price}%22"
-
+        
+        if self.days_since is not None:
+            main_url = f"{main_url}&publication_date={self.check_days_since}"
+        logger.info(f"*** Main URL: {main_url} ***")
         return main_url
 
     @staticmethod
@@ -216,14 +233,14 @@ class FundaScraper(object):
         ]
 
         # Deal with list_since_selector especially, since its CSS varies sometimes
-        # if clean_list_date(result[4]) == "na":
-        #     for i in range(6, 16):
-        #         selector = f".fd-align-items-center:nth-child({i}) span"
-        #         update_list_since = self.get_value_from_css(soup, selector)
-        #         if clean_list_date(update_list_since) == "na":
-        #             pass
-        #         else:
-        #             result[4] = update_list_since
+        if clean_list_date(result[4]) == "na":
+            for i in range(6, 16):
+                selector = f".fd-align-items-center:nth-child({i}) span"
+                update_list_since = self.get_value_from_css(soup, selector)
+                if clean_list_date(update_list_since) == "na":
+                    pass
+                else:
+                    result[4] = update_list_since
 
         photos_list = [p.get("data-lazy-srcset") for p in soup.select(self.selectors.photo)]
         photos_string = ", ".join(photos_list)
@@ -326,6 +343,9 @@ if __name__ == "__main__":
         "--max_price", type=int, help="Specify the max price", default=None
     )
     parser.add_argument(
+        "--days_since", type=int, help="Specify the days since publication", default=None
+    )
+    parser.add_argument(
         "--raw_data",
         type=bool,
         help="Indicate whether you want the raw scraping result or preprocessed one",
@@ -337,7 +357,7 @@ if __name__ == "__main__":
         help="Indicate whether you want to save the data or not",
         default=True,
     )
-
+    
     args = parser.parse_args()
     scraper = FundaScraper(
         area=args.area,
@@ -347,6 +367,7 @@ if __name__ == "__main__":
         n_pages=args.n_pages,
         min_price=args.min_price,
         max_price=args.max_price,
+        days_since=args.days_since,
     )
     df = scraper.run(raw_data=args.raw_data, save=args.save)
     print(df.head())
