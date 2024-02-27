@@ -23,7 +23,7 @@ keep_cols:
     - address
     - year_built
     - house_age
-#    - date_list
+    - date_list
 #    - ym_list
 #    - year_list
     - descrip
