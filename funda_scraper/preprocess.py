@@ -1,7 +1,7 @@
 """Preprocess raw data scraped from Funda"""
 import re
 from datetime import datetime, timedelta
-from typing import Union
+from typing import List, Union
 
 import pandas as pd
 from dateutil.parser import parse
@@ -104,7 +104,7 @@ def clean_energy_label(x: str) -> str:
         return x
 
 
-def clean_list_date(x: str) -> Union[datetime, str]:
+def clean_date_format(x: str) -> Union[datetime, str]:
     """Transform the date from string to datetime object."""
 
     x = x.replace("weken", "week")
@@ -150,19 +150,27 @@ def clean_list_date(x: str) -> Union[datetime, str]:
         return "na"
 
 
-def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
+def preprocess_data(
+    df: pd.DataFrame, is_past: bool, keep_extra_cols: List[str] = None
+) -> pd.DataFrame:
     """
     Clean the raw dataframe from scraping.
     Indicate whether the historical data is included since the columns would be different.
 
     :param df: raw dataframe from scraping
     :param is_past: whether it scraped past data
+    :param keep_extra_cols: specify additional column names to keep in the final df
     :return: clean dataframe
     """
 
     df = df.dropna()
-    keep_cols = config.keep_cols.selling_data
-    keep_cols_sold = keep_cols + config.keep_cols.sold_data
+    if not is_past:
+        keep_cols = config.keep_cols.selling_data
+    else:
+        keep_cols = config.keep_cols.selling_data + config.keep_cols.sold_data
+
+    if keep_extra_cols is not None:
+        keep_cols.extend(keep_extra_cols)
 
     # Info
     df["house_id"] = df["url"].apply(lambda x: int(x.split("/")[-2].split("-")[1]))
@@ -190,31 +198,13 @@ def preprocess_data(df: pd.DataFrame, is_past: bool) -> pd.DataFrame:
     df["year_built"] = df["year"].apply(clean_year).astype(int)
     df["house_age"] = datetime.now().year - df["year_built"]
 
-    # if is_past:
-    #     # Only check past data
-    #     df = df[(df["date_sold"] != "na") & (df["date_list"] != "na")]
-    #     df["date_list"] = df["date_list"].apply(clean_list_date)
-    #     df["date_sold"] = df["date_sold"].apply(clean_list_date)
-    #     df = df.dropna()
-    #     df["date_list"] = pd.to_datetime(df["date_list"])
-    #     df["date_sold"] = pd.to_datetime(df["date_sold"])
-    #     df["ym_sold"] = df["date_sold"].apply(lambda x: x.to_period("M").to_timestamp())
-    #     df["year_sold"] = df["date_sold"].apply(lambda x: x.year)
-    #
-    #     # Term
-    #     df["term_days"] = df["date_sold"] - df["date_list"]
-    #     df["term_days"] = df["term_days"].apply(lambda x: x.days)
-    #     keep_cols = keep_cols_sold
-    #     df["date_sold"] = df["date_sold"].dt.date
-    #
-    # else:
-    #     # Only check current data
-    #     df["date_list"] = df["listed_since"].apply(clean_list_date)
-    #     df = df[df["date_list"] != "na"]
-    #     df["date_list"] = pd.to_datetime(df["date_list"])
-
-    # df["ym_list"] = df["date_list"].apply(lambda x: x.to_period("M").to_timestamp())
-    # df["year_list"] = df["date_list"].apply(lambda x: x.year)
-    # df["date_list"] = df["date_list"].dt.date
+    if is_past:
+        # Only check past data
+        df = df[df["date_sold"] != "na"]
+        df["date_sold"] = df["date_sold"].apply(clean_date_format)
+        df = df.dropna()
+        df["date_sold"] = pd.to_datetime(df["date_sold"])
+        df["ym_sold"] = df["date_sold"].apply(lambda x: x.to_period("M").to_timestamp())
+        df["year_sold"] = df["date_sold"].apply(lambda x: x.year)
 
     return df[keep_cols].reset_index(drop=True)

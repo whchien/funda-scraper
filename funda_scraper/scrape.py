@@ -4,7 +4,7 @@ import datetime
 import json
 import multiprocessing as mp
 import os
-from typing import List, Literal, Optional
+from typing import List, Optional
 
 import pandas as pd
 import requests
@@ -13,7 +13,7 @@ from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
 from funda_scraper.config.core import config
-from funda_scraper.preprocess import clean_list_date, preprocess_data
+from funda_scraper.preprocess import clean_date_format, preprocess_data
 from funda_scraper.utils import logger
 
 
@@ -78,6 +78,9 @@ class FundaScraper(object):
     @property
     def check_days_since(self) -> int:
         """Whether days since complies"""
+        if self.find_past:
+            raise ValueError("'days_since' can only be specified when find_past=False.")
+
         if self.days_since in [None, 1, 3, 5, 10, 30]:
             return self.days_since
         else:
@@ -162,11 +165,15 @@ class FundaScraper(object):
     def _build_main_query_url(self) -> str:
         query = "koop" if self.to_buy else "huur"
 
-        main_url = f"{self.base_url}/zoeken/{query}?selected_area=%5B%22{self.area}%22%5D"
+        main_url = (
+            f"{self.base_url}/zoeken/{query}?selected_area=%5B%22{self.area}%22%5D"
+        )
 
         if self.property_type:
-            property_types = self.property_type.split(',')
-            formatted_property_types = ['%22' + prop_type + '%22' for prop_type in property_types]
+            property_types = self.property_type.split(",")
+            formatted_property_types = [
+                "%22" + prop_type + "%22" for prop_type in property_types
+            ]
             main_url += f"&object_type=%5B{','.join(formatted_property_types)}%5D"
 
         if self.find_past:
@@ -176,7 +183,7 @@ class FundaScraper(object):
             min_price = "" if self.min_price is None else self.min_price
             max_price = "" if self.max_price is None else self.max_price
             main_url = f"{main_url}&price=%22{min_price}-{max_price}%22"
-        
+
         if self.days_since is not None:
             main_url = f"{main_url}&publication_date={self.check_days_since}"
         logger.info(f"*** Main URL: {main_url} ***")
@@ -244,16 +251,18 @@ class FundaScraper(object):
         ]
 
         # Deal with list_since_selector especially, since its CSS varies sometimes
-        if clean_list_date(result[4]) == "na":
+        if clean_date_format(result[4]) == "na":
             for i in range(6, 16):
                 selector = f".fd-align-items-center:nth-child({i}) span"
                 update_list_since = self.get_value_from_css(soup, selector)
-                if clean_list_date(update_list_since) == "na":
+                if clean_date_format(update_list_since) == "na":
                     pass
                 else:
                     result[4] = update_list_since
 
-        photos_list = [p.get("data-lazy-srcset") for p in soup.select(self.selectors.photo)]
+        photos_list = [
+            p.get("data-lazy-srcset") for p in soup.select(self.selectors.photo)
+        ]
         photos_string = ", ".join(photos_list)
 
         # Clean up the retried result from one page
@@ -354,7 +363,10 @@ if __name__ == "__main__":
         "--max_price", type=int, help="Specify the max price", default=None
     )
     parser.add_argument(
-        "--days_since", type=int, help="Specify the days since publication", default=None
+        "--days_since",
+        type=int,
+        help="Specify the days since publication",
+        default=None,
     )
     parser.add_argument(
         "--raw_data",
@@ -368,7 +380,7 @@ if __name__ == "__main__":
         help="Indicate whether you want to save the data or not",
         default=True,
     )
-    
+
     args = parser.parse_args()
     scraper = FundaScraper(
         area=args.area,

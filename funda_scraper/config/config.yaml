@@ -3,10 +3,10 @@ header:
 base_url: https://www.funda.nl/en
 keep_cols:
   sold_data:
+    - date_sold
     - ym_sold
     - year_sold
-    - term_days
-    - date_sold
+#    - term_days
   selling_data:
     - url
     - house_id
@@ -26,7 +26,7 @@ keep_cols:
     - house_age
     # - date_list
     # - ym_list
-#    - year_list
+    # - year_list
     - descrip
     - photo
 css_selector:
