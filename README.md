@@ -11,7 +11,7 @@
 You can find houses either for sale or for rent, and the historical data from the past few year are also attainable.
 
 Please note:
-1. Scraping this website is only allowed for personal use (as per Funda's Terms and Conditions).
+1. Scraping this website is ONLY allowed for personal use (as per Funda's Terms and Conditions).
 2. Any commercial use of this Python package is prohibited. The author holds no liability for any misuse of the package.
 
 
@@ -39,7 +39,7 @@ df.head()
 ![image](https://i.imgur.com/mmN9mjQ.png)
 
 
-Note: if you are using Windows, please add `if __name__ == '__main__':
+*** Note: if you are using Windows, please add `if __name__ == '__main__':
 ` before your script.
 
 
@@ -82,7 +82,9 @@ The scraped raw result contains following information:
 - last_ask_price_m2
 - city
 
-You can use `scraper.run(raw_data=True)` to fetch the data without preprocessing.
+*** Note: information regarding listing date is no longer available since 2023 Q4. Funda requires users to log in to see this information.
+
+You can specify `scraper.run(raw_data=True)` to fetch the data without preprocessing.
 
 ## More information
 
