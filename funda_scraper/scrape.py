@@ -32,9 +32,11 @@ class FundaScraper(object):
         min_price: Optional[int] = None,
         max_price: Optional[int] = None,
         days_since: Optional[int] = None,
+        property_type: Optional[str] = None,
     ):
         # Init attributes
         self.area = area.lower().replace(" ", "-")
+        self.property_type = property_type
         self.want_to = want_to
         self.find_past = find_past
         self.page_start = max(page_start, 1)
@@ -101,6 +103,7 @@ class FundaScraper(object):
     def reset(
         self,
         area: Optional[str] = None,
+        property_type: Optional[str] = None,
         want_to: Optional[str] = None,
         page_start: Optional[int] = None,
         n_pages: Optional[int] = None,
@@ -112,6 +115,8 @@ class FundaScraper(object):
         """Overwrite or initialise the searching scope."""
         if area is not None:
             self.area = area
+        if property_type is not None:
+            self.property_type = property_type
         if want_to is not None:
             self.want_to = want_to
         if page_start is not None:
@@ -156,7 +161,13 @@ class FundaScraper(object):
 
     def _build_main_query_url(self) -> str:
         query = "koop" if self.to_buy else "huur"
-        main_url = f"{self.base_url}/zoeken/{query}?selected_area=%22{self.area}%22"
+
+        main_url = f"{self.base_url}/zoeken/{query}?selected_area=%5B%22{self.area}%22%5D"
+
+        if self.property_type:
+            property_types = self.property_type.split(',')
+            formatted_property_types = ['%22' + prop_type + '%22' for prop_type in property_types]
+            main_url += f"&object_type=%5B{','.join(formatted_property_types)}%5D"
 
         if self.find_past:
             main_url = f"{main_url}&availability=%22unavailable%22"
