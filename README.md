@@ -39,6 +39,10 @@ df.head()
 ![image](https://i.imgur.com/mmN9mjQ.png)
 
 
+Note: if you are using Windows, please add `if __name__ == '__main__':
+` before your script.
+
+
 You can pass several arguments to `FundaScraper()` for customized scraping:
 - `area`: Specify the city or specific area you want to look for, e.g. Amsterdam, Utrecht, Rotterdam, etc
 - `want_to`: You can choose either `buy` or `rent`, which finds houses either for sale or for rent. 
