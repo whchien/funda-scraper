@@ -8,6 +8,7 @@ keep_cols:
     - term_days
     - date_sold
   selling_data:
+    - url
     - house_id
     - city
     - house_type
@@ -23,8 +24,8 @@ keep_cols:
     - address
     - year_built
     - house_age
-#    - date_list
-#    - ym_list
+    # - date_list
+    # - ym_list
 #    - year_list
     - descrip
     - photo
