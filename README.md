@@ -25,7 +25,7 @@ pip install funda-scraper
 git clone https://github.com/whchien/funda-scraper.git
 cd funda-scraper
 export PYTHONPATH=${PWD}
-python funda_scraper/scrape.py --area amsterdam --want_to rent --find_past False --page_start 1 --n_pages 3
+python funda_scraper/scrape.py --area amsterdam --want_to rent --page_start 1 --n_pages 3 --save
 ```
 
 ## Quickstart 
