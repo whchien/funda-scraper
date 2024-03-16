@@ -218,6 +218,7 @@ class FundaScraper(object):
             else:
                 list_since_selector = ".fd-align-items-center:nth-child(7) span"
 
+        # Must be in the same order as in config.yaml
         result = [
             link,
             self.get_value_from_css(soup, self.selectors.price),
@@ -248,6 +249,7 @@ class FundaScraper(object):
             self.get_value_from_css(soup, self.selectors.last_ask_price_m2).split("\r")[
                 0
             ],
+            self.get_value_from_css(soup, self.selectors.sale_status),
         ]
 
         # Deal with list_since_selector especially, since its CSS varies sometimes
