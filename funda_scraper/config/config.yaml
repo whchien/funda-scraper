@@ -36,7 +36,7 @@ css_selector:
   descrip: ".object-description-body"
   listed_since: ".fd-align-items-center:nth-child(6) span"
   zip_code: ".object-header__subtitle"
-  size: ".fd-m-right-xl--bp-m .fd-text--nowrap"
+  size: ".object-kenmerken-list:nth-child(8) .fd-align-items-center:nth-child(5) span"
   year: ".fd-align-items-center~ .fd-align-items-center .fd-m-right-xs"
   living_area: ".object-kenmerken-list:nth-child(8) .fd-align-items-center:nth-child(2) span"
   kind_of_house: ".object-kenmerken-list:nth-child(5) .fd-align-items-center:nth-child(2) span"
