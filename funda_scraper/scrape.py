@@ -317,10 +317,10 @@ class FundaScraper(object):
         """Save the result to a .csv file."""
         if filepath is None:
             self._check_dir()
-            date = str(datetime.datetime.now()).replace("-", "").replace(" ", "_").replace(":", "_").split(".")[0]
+            date = str(datetime.datetime.now().date()).replace("-", "")
             status = "unavailable" if self.find_past else "unavailable"
             want_to = "buy" if self.to_buy else "rent"
-            filepath = f"./data/houseprice_{date}.csv"
+            filepath = f"./data/houseprice_{date}_{self.area}_{want_to}_{status}_{len(self.links)}.csv"
         df.to_csv(filepath, index=False)
         logger.info(f"*** File saved: {filepath}. ***")
 
