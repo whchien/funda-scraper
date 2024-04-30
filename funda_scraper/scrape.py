@@ -150,7 +150,7 @@ class FundaScraper(object):
         if sort is not None:
             self.sort = sort
 
-    def remove_duplicates(lst):
+    def remove_duplicates(self, lst):
       return list(OrderedDict.fromkeys(lst))
 
     def fetch_all_links(self, page_start: int = None, n_pages: int = None) -> None:
