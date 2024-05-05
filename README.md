@@ -51,6 +51,8 @@ You can pass several arguments to `FundaScraper()` for customized scraping:
 - `n_pages`: Indicate how many page you want to scrape. The default is `1`. 
 - `min_price`: Indicate the lowest amount for the budget
 - `max_price`: Indicate the highest amount for the budget
+- `min_floor_area`: Indicate the lowest floor area
+- `max_floor_area`: Indicate the highest floor area
 
 The scraped raw result contains following information:
 - url
