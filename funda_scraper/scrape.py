@@ -1,5 +1,6 @@
 """Main funda scraper module"""
 import argparse
+from collections import OrderedDict
 import datetime
 import json
 import multiprocessing as mp
@@ -33,6 +34,7 @@ class FundaScraper(object):
         max_price: Optional[int] = None,
         days_since: Optional[int] = None,
         property_type: Optional[str] = None,
+        sort: Optional[str] = None,
     ):
         # Init attributes
         self.area = area.lower().replace(" ", "-")
@@ -45,6 +47,7 @@ class FundaScraper(object):
         self.min_price = min_price
         self.max_price = max_price
         self.days_since = days_since
+        self.sort = sort
 
         # Instantiate along the way
         self.links: List[str] = []
@@ -63,6 +66,7 @@ class FundaScraper(object):
             f"min_price={self.min_price})"
             f"max_price={self.max_price})"
             f"days_since={self.days_since})"
+            f"sort={self.sort})"
         )
 
     @property
@@ -86,6 +90,14 @@ class FundaScraper(object):
         else:
             raise ValueError("'days_since' must be either None, 1, 3, 5, 10 or 30.")
 
+    @property
+    def check_sort(self) -> str:
+        """Whether sort complies"""
+        if self.sort in [None, 'relevancy', 'date_down', 'date_up', 'price_up', 'price_down', 'floor_area_down', 'plot_area_down', 'city_up' 'postal_code_up']:
+            return self.sort
+        else:
+            raise ValueError("'sort' must be either None, 'relevancy', 'date_down', 'date_up', 'price_up', 'price_down', 'floor_area_down', 'plot_area_down', 'city_up' or 'postal_code_up'.")
+
     @staticmethod
     def _check_dir() -> None:
         """Check whether a temporary directory for data"""
@@ -101,7 +113,7 @@ class FundaScraper(object):
         script_tag = soup.find_all("script", {"type": "application/ld+json"})[0]
         json_data = json.loads(script_tag.contents[0])
         urls = [item["url"] for item in json_data["itemListElement"]]
-        return list(set(urls))
+        return urls
 
     def reset(
         self,
@@ -114,6 +126,7 @@ class FundaScraper(object):
         min_price: Optional[int] = None,
         max_price: Optional[int] = None,
         days_since: Optional[int] = None,
+        sort: Optional[str] = None,
     ) -> None:
         """Overwrite or initialise the searching scope."""
         if area is not None:
@@ -134,6 +147,11 @@ class FundaScraper(object):
             self.max_price = max_price
         if days_since is not None:
             self.days_since = days_since
+        if sort is not None:
+            self.sort = sort
+
+    def remove_duplicates(self, lst):
+      return list(OrderedDict.fromkeys(lst))
 
     def fetch_all_links(self, page_start: int = None, n_pages: int = None) -> None:
         """Find all the available links across multiple pages."""
@@ -156,7 +174,7 @@ class FundaScraper(object):
                 logger.info(f"*** The last available page is {self.page_end} ***")
                 break
 
-        urls = list(set(urls))
+        urls = self.remove_duplicates(urls)
         logger.info(
             f"*** Got all the urls. {len(urls)} houses found from {self.page_start} to {self.page_end} ***"
         )
@@ -186,6 +204,10 @@ class FundaScraper(object):
 
         if self.days_since is not None:
             main_url = f"{main_url}&publication_date={self.check_days_since}"
+
+        if self.sort is not None:
+            main_url = f"{main_url}&sort=%22{self.check_sort}%22"
+
         logger.info(f"*** Main URL: {main_url} ***")
         return main_url
 
@@ -271,13 +293,13 @@ class FundaScraper(object):
         return result
 
     def scrape_pages(self) -> None:
-        """Scrape all the content acoss multiple pages."""
+        """Scrape all the content across multiple pages."""
 
         logger.info("*** Phase 2: Start scraping from individual links ***")
         df = pd.DataFrame({key: [] for key in self.selectors.keys()})
 
         # Scrape pages with multiprocessing to improve efficiency
-        # TODO: use asynctio instead
+        # TODO: use asyncio instead
         pools = mp.cpu_count()
         content = process_map(self.scrape_one_link, self.links, max_workers=pools)
 
@@ -369,6 +391,13 @@ if __name__ == "__main__":
         default=None,
     )
     parser.add_argument(
+        "--sort",
+        type=str,
+        help="Specify sorting",
+        default=None,
+        choices=[None, 'relevancy', 'date_down', 'date_up', 'price_up', 'price_down', 'floor_area_down', 'plot_area_down', 'city_up' 'postal_code_up'],
+    )
+    parser.add_argument(
         "--raw_data",
         action="store_true",
         help="Indicate whether you want the raw scraping result",
@@ -389,6 +418,7 @@ if __name__ == "__main__":
         min_price=args.min_price,
         max_price=args.max_price,
         days_since=args.days_since,
+        sort=args.sort,
     )
     df = scraper.run(raw_data=args.raw_data, save=args.save)
     print(df.head())
