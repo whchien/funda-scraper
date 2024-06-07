@@ -343,12 +343,12 @@ if __name__ == "__main__":
         type=str,
         help="Specify you want to 'rent' or 'buy'",
         default="rent",
+        choices=["rent", "buy"],
     )
     parser.add_argument(
         "--find_past",
-        type=bool,
-        help="Indicate whether you want to use hisotrical data or not",
-        default=False,
+        action="store_true",
+        help="Indicate whether you want to use historical data",
     )
     parser.add_argument(
         "--page_start", type=int, help="Specify which page to start scraping", default=1
@@ -370,15 +370,13 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--raw_data",
-        type=bool,
-        help="Indicate whether you want the raw scraping result or preprocessed one",
-        default=False,
+        action="store_true",
+        help="Indicate whether you want the raw scraping result",
     )
     parser.add_argument(
         "--save",
-        type=bool,
-        help="Indicate whether you want to save the data or not",
-        default=True,
+        action="store_true",
+        help="Indicate whether you want to save the data",
     )
 
     args = parser.parse_args()
