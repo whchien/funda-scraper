@@ -34,6 +34,8 @@ class FundaScraper(object):
         max_price: Optional[int] = None,
         days_since: Optional[int] = None,
         property_type: Optional[str] = None,
+        min_floor_area: Optional[str] = None,
+        max_floor_area: Optional[str] = None,
         sort: Optional[str] = None,
     ):
         # Init attributes
@@ -47,6 +49,8 @@ class FundaScraper(object):
         self.min_price = min_price
         self.max_price = max_price
         self.days_since = days_since
+        self.min_floor_area = min_floor_area
+        self.max_floor_area = max_floor_area
         self.sort = sort
 
         # Instantiate along the way
@@ -62,6 +66,12 @@ class FundaScraper(object):
             f"want_to={self.want_to}, "
             f"n_pages={self.n_pages}, "
             f"page_start={self.page_start}, "
+            f"find_past={self.find_past}, "
+            f"min_price={self.min_price}, "
+            f"max_price={self.max_price}, "
+            f"days_since={self.days_since}, "
+            f"min_floor_area={self.min_floor_area}, "
+            f"max_floor_area={self.max_floor_area}, "
             f"find_past={self.find_past})"
             f"min_price={self.min_price})"
             f"max_price={self.max_price})"
@@ -126,6 +136,8 @@ class FundaScraper(object):
         min_price: Optional[int] = None,
         max_price: Optional[int] = None,
         days_since: Optional[int] = None,
+        min_floor_area: Optional[str] = None,
+        max_floor_area: Optional[str] = None,
         sort: Optional[str] = None,
     ) -> None:
         """Overwrite or initialise the searching scope."""
@@ -147,6 +159,10 @@ class FundaScraper(object):
             self.max_price = max_price
         if days_since is not None:
             self.days_since = days_since
+        if min_floor_area is not None:
+            self.min_floor_area = min_floor_area
+        if max_floor_area is not None:
+            self.max_floor_area = max_floor_area
         if sort is not None:
             self.sort = sort
 
@@ -204,6 +220,11 @@ class FundaScraper(object):
 
         if self.days_since is not None:
             main_url = f"{main_url}&publication_date={self.check_days_since}"
+
+        if self.min_floor_area or self.max_floor_area:
+            min_floor_area = "" if self.min_floor_area is None else self.min_floor_area
+            max_floor_area = "" if self.max_floor_area is None else self.max_floor_area
+            main_url = f"{main_url}&floor_area=%22{min_floor_area}-{max_floor_area}%22"
 
         if self.sort is not None:
             main_url = f"{main_url}&sort=%22{self.check_sort}%22"
