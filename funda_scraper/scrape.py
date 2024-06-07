@@ -225,7 +225,7 @@ class FundaScraper(object):
             main_url += f"&object_type=%5B{','.join(formatted_property_types)}%5D"
 
         if self.find_past:
-            main_url = f"{main_url}&availability=%22unavailable%22"
+            main_url = f'{main_url}&availability=%5B"unavailable"%5D'
 
         if self.min_price is not None or self.max_price is not None:
             min_price = "" if self.min_price is None else self.min_price
