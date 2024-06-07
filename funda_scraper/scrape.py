@@ -1,5 +1,6 @@
 """Main funda scraper module"""
 import argparse
+from collections import OrderedDict
 import datetime
 import json
 import multiprocessing as mp
@@ -35,6 +36,7 @@ class FundaScraper(object):
         property_type: Optional[str] = None,
         min_floor_area: Optional[str] = None,
         max_floor_area: Optional[str] = None,
+        sort: Optional[str] = None,
     ):
         # Init attributes
         self.area = area.lower().replace(" ", "-")
@@ -49,6 +51,7 @@ class FundaScraper(object):
         self.days_since = days_since
         self.min_floor_area = min_floor_area
         self.max_floor_area = max_floor_area
+        self.sort = sort
 
         # Instantiate along the way
         self.links: List[str] = []
@@ -69,7 +72,11 @@ class FundaScraper(object):
             f"days_since={self.days_since}, "
             f"min_floor_area={self.min_floor_area}, "
             f"max_floor_area={self.max_floor_area}, "
-            ")"
+            f"find_past={self.find_past})"
+            f"min_price={self.min_price})"
+            f"max_price={self.max_price})"
+            f"days_since={self.days_since})"
+            f"sort={self.sort})"
         )
 
     @property
@@ -93,6 +100,14 @@ class FundaScraper(object):
         else:
             raise ValueError("'days_since' must be either None, 1, 3, 5, 10 or 30.")
 
+    @property
+    def check_sort(self) -> str:
+        """Whether sort complies"""
+        if self.sort in [None, 'relevancy', 'date_down', 'date_up', 'price_up', 'price_down', 'floor_area_down', 'plot_area_down', 'city_up' 'postal_code_up']:
+            return self.sort
+        else:
+            raise ValueError("'sort' must be either None, 'relevancy', 'date_down', 'date_up', 'price_up', 'price_down', 'floor_area_down', 'plot_area_down', 'city_up' or 'postal_code_up'.")
+
     @staticmethod
     def _check_dir() -> None:
         """Check whether a temporary directory for data"""
@@ -108,7 +123,7 @@ class FundaScraper(object):
         script_tag = soup.find_all("script", {"type": "application/ld+json"})[0]
         json_data = json.loads(script_tag.contents[0])
         urls = [item["url"] for item in json_data["itemListElement"]]
-        return list(set(urls))
+        return urls
 
     def reset(
         self,
@@ -123,6 +138,7 @@ class FundaScraper(object):
         days_since: Optional[int] = None,
         min_floor_area: Optional[str] = None,
         max_floor_area: Optional[str] = None,
+        sort: Optional[str] = None,
     ) -> None:
         """Overwrite or initialise the searching scope."""
         if area is not None:
@@ -147,6 +163,11 @@ class FundaScraper(object):
             self.min_floor_area = min_floor_area
         if max_floor_area is not None:
             self.max_floor_area = max_floor_area
+        if sort is not None:
+            self.sort = sort
+
+    def remove_duplicates(self, lst):
+      return list(OrderedDict.fromkeys(lst))
 
     def fetch_all_links(self, page_start: int = None, n_pages: int = None) -> None:
         """Find all the available links across multiple pages."""
@@ -169,7 +190,7 @@ class FundaScraper(object):
                 logger.info(f"*** The last available page is {self.page_end} ***")
                 break
 
-        urls = list(set(urls))
+        urls = self.remove_duplicates(urls)
         logger.info(
             f"*** Got all the urls. {len(urls)} houses found from {self.page_start} to {self.page_end} ***"
         )
@@ -204,6 +225,9 @@ class FundaScraper(object):
             min_floor_area = "" if self.min_floor_area is None else self.min_floor_area
             max_floor_area = "" if self.max_floor_area is None else self.max_floor_area
             main_url = f"{main_url}&floor_area=%22{min_floor_area}-{max_floor_area}%22"
+
+        if self.sort is not None:
+            main_url = f"{main_url}&sort=%22{self.check_sort}%22"
 
         logger.info(f"*** Main URL: {main_url} ***")
         return main_url
@@ -290,13 +314,13 @@ class FundaScraper(object):
         return result
 
     def scrape_pages(self) -> None:
-        """Scrape all the content acoss multiple pages."""
+        """Scrape all the content across multiple pages."""
 
         logger.info("*** Phase 2: Start scraping from individual links ***")
         df = pd.DataFrame({key: [] for key in self.selectors.keys()})
 
         # Scrape pages with multiprocessing to improve efficiency
-        # TODO: use asynctio instead
+        # TODO: use asyncio instead
         pools = mp.cpu_count()
         content = process_map(self.scrape_one_link, self.links, max_workers=pools)
 
@@ -362,12 +386,12 @@ if __name__ == "__main__":
         type=str,
         help="Specify you want to 'rent' or 'buy'",
         default="rent",
+        choices=["rent", "buy"],
     )
     parser.add_argument(
         "--find_past",
-        type=bool,
-        help="Indicate whether you want to use hisotrical data or not",
-        default=False,
+        action="store_true",
+        help="Indicate whether you want to use historical data",
     )
     parser.add_argument(
         "--page_start", type=int, help="Specify which page to start scraping", default=1
@@ -388,16 +412,21 @@ if __name__ == "__main__":
         default=None,
     )
     parser.add_argument(
+        "--sort",
+        type=str,
+        help="Specify sorting",
+        default=None,
+        choices=[None, 'relevancy', 'date_down', 'date_up', 'price_up', 'price_down', 'floor_area_down', 'plot_area_down', 'city_up' 'postal_code_up'],
+    )
+    parser.add_argument(
         "--raw_data",
-        type=bool,
-        help="Indicate whether you want the raw scraping result or preprocessed one",
-        default=False,
+        action="store_true",
+        help="Indicate whether you want the raw scraping result",
     )
     parser.add_argument(
         "--save",
-        type=bool,
-        help="Indicate whether you want to save the data or not",
-        default=True,
+        action="store_true",
+        help="Indicate whether you want to save the data",
     )
 
     args = parser.parse_args()
@@ -410,6 +439,7 @@ if __name__ == "__main__":
         min_price=args.min_price,
         max_price=args.max_price,
         days_since=args.days_since,
+        sort=args.sort,
     )
     df = scraper.run(raw_data=args.raw_data, save=args.save)
     print(df.head())

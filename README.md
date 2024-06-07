@@ -25,7 +25,7 @@ pip install funda-scraper
 git clone https://github.com/whchien/funda-scraper.git
 cd funda-scraper
 export PYTHONPATH=${PWD}
-python funda_scraper/scrape.py --area amsterdam --want_to rent --find_past False --page_start 1 --n_pages 3
+python funda_scraper/scrape.py --area amsterdam --want_to rent --page_start 1 --n_pages 3 --save
 ```
 
 ## Quickstart 
@@ -36,7 +36,7 @@ scraper = FundaScraper(area="amsterdam", want_to="rent", find_past=False, page_s
 df = scraper.run(raw_data=False, save=True, filepath="test.csv")
 df.head()
 ```
-![image](https://i.imgur.com/mmN9mjQ.png)
+![image](static/example_df.png)
 
 
 *** Note: if you are using Windows, please add `if __name__ == '__main__':
@@ -44,15 +44,19 @@ df.head()
 
 
 You can pass several arguments to `FundaScraper()` for customized scraping:
-- `area`: Specify the city or specific area you want to look for, e.g. Amsterdam, Utrecht, Rotterdam, etc
+- `area`: Specify the city or specific area you want to look for, e.g. Amsterdam, Utrecht, Rotterdam, etc.
 - `want_to`: You can choose either `buy` or `rent`, which finds houses either for sale or for rent. 
 - `find_past`: Specify whether you want to find the data in the past or the ones in the market. If `True`, only historical data will be scraped. The default is `False`.
 - `page_start`: Indicate which page you want to start scraping. The default is `1`. 
 - `n_pages`: Indicate how many page you want to scrape. The default is `1`. 
-- `min_price`: Indicate the lowest amount for the budget
-- `max_price`: Indicate the highest amount for the budget
-- `min_floor_area`: Indicate the lowest floor area
-- `max_floor_area`: Indicate the highest floor area
+- `min_price`: Indicate the lowest amount for the budget.
+- `max_price`: Indicate the highest amount for the budget.
+- `min_floor_area`: Indicate the lowest floor area.
+- `max_floor_area`: Indicate the highest floor area.
+- `days_since:`: Specify the maximum amount of days since listing date.
+- `property_type`: Specify the desired property type(s).
+- `sort`: Specify sorting.
+
 
 The scraped raw result contains following information:
 - url
