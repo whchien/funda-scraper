@@ -1,11 +1,12 @@
 """Main funda scraper module"""
 import argparse
-from collections import OrderedDict
 import datetime
 import json
 import multiprocessing as mp
 import os
+from collections import OrderedDict
 from typing import List, Optional
+from urllib.parse import urlparse, urlunparse
 
 import pandas as pd
 import requests
@@ -17,7 +18,6 @@ from funda_scraper.config.core import config
 from funda_scraper.preprocess import clean_date_format, preprocess_data
 from funda_scraper.utils import logger
 
-from urllib.parse import urlparse, urlunparse
 
 class FundaScraper(object):
     """
@@ -104,10 +104,23 @@ class FundaScraper(object):
     @property
     def check_sort(self) -> str:
         """Whether sort complies"""
-        if self.sort in [None, 'relevancy', 'date_down', 'date_up', 'price_up', 'price_down', 'floor_area_down', 'plot_area_down', 'city_up' 'postal_code_up']:
+        if self.sort in [
+            None,
+            "relevancy",
+            "date_down",
+            "date_up",
+            "price_up",
+            "price_down",
+            "floor_area_down",
+            "plot_area_down",
+            "city_up" "postal_code_up",
+        ]:
             return self.sort
         else:
-            raise ValueError("'sort' must be either None, 'relevancy', 'date_down', 'date_up', 'price_up', 'price_down', 'floor_area_down', 'plot_area_down', 'city_up' or 'postal_code_up'.")
+            raise ValueError(
+                "'sort' must be either None, 'relevancy', 'date_down', 'date_up', 'price_up', 'price_down', "
+                "'floor_area_down', 'plot_area_down', 'city_up' or 'postal_code_up'. "
+            )
 
     @staticmethod
     def _check_dir() -> None:
@@ -168,19 +181,21 @@ class FundaScraper(object):
             self.sort = sort
 
     def remove_duplicates(self, lst):
-      return list(OrderedDict.fromkeys(lst))
+        return list(OrderedDict.fromkeys(lst))
 
-    def fix_link(self, link:str) -> str:
+    def fix_link(self, link: str) -> str:
         link_url = urlparse(link)
         link_path = link_url.path.split("/")
         property_id = link_path.pop(5)
-        property_address =  link_path.pop(4).split("-")
+        property_address = link_path.pop(4).split("-")
         link_path = link_path[2:4]
         property_address.insert(1, property_id)
         link_path.extend(["-".join(property_address), "?old_ldp=true"])
-            
-        return urlunparse((link_url.scheme, link_url.netloc, "/".join(link_path),'','',''))
-    
+
+        return urlunparse(
+            (link_url.scheme, link_url.netloc, "/".join(link_path), "", "", "")
+        )
+
     def fetch_all_links(self, page_start: int = None, n_pages: int = None) -> None:
         """Find all the available links across multiple pages."""
 
@@ -430,7 +445,17 @@ if __name__ == "__main__":
         type=str,
         help="Specify sorting",
         default=None,
-        choices=[None, 'relevancy', 'date_down', 'date_up', 'price_up', 'price_down', 'floor_area_down', 'plot_area_down', 'city_up' 'postal_code_up'],
+        choices=[
+            None,
+            "relevancy",
+            "date_down",
+            "date_up",
+            "price_up",
+            "price_down",
+            "floor_area_down",
+            "plot_area_down",
+            "city_up" "postal_code_up",
+        ],
     )
     parser.add_argument(
         "--raw_data",
