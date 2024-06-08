@@ -1,5 +1,3 @@
-
-
 lint:
 	ruff check
 
