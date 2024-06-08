@@ -1,4 +1,5 @@
 """Main funda scraper module"""
+
 import argparse
 import datetime
 import json
@@ -21,7 +22,7 @@ from funda_scraper.utils import logger
 
 class FundaScraper(object):
     """
-    Handles the main scraping function.
+    A class used to scrape real estate data from the Funda website.
     """
 
     def __init__(
@@ -39,6 +40,21 @@ class FundaScraper(object):
         max_floor_area: Optional[str] = None,
         sort: Optional[str] = None,
     ):
+        """
+
+        :param area: The area to search for properties, formatted for URL compatibility.
+        :param want_to: Specifies whether the user wants to buy or rent properties.
+        :param page_start: The starting page number for the search.
+        :param n_pages: The number of pages to scrape.
+        :param find_past: Flag to indicate whether to find past listings.
+        :param min_price: The minimum price for the property search.
+        :param max_price: The maximum price for the property search.
+        :param days_since: The maximum number of days since the listing was published.
+        :param property_type: The type of property to search for.
+        :param min_floor_area: The minimum floor area for the property search.
+        :param max_floor_area: The maximum floor area for the property search.
+        :param sort: The sorting criterion for the search results.
+        """
         # Init attributes
         self.area = area.lower().replace(" ", "-")
         self.property_type = property_type
@@ -82,7 +98,7 @@ class FundaScraper(object):
 
     @property
     def to_buy(self) -> bool:
-        """Whether to buy or not"""
+        """Determines if the search is for buying or renting properties."""
         if self.want_to.lower() in ["buy", "koop", "b", "k"]:
             return True
         elif self.want_to.lower() in ["rent", "huur", "r", "h"]:
@@ -92,7 +108,7 @@ class FundaScraper(object):
 
     @property
     def check_days_since(self) -> int:
-        """Whether days since complies"""
+        """Validates the 'days_since' attribute."""
         if self.find_past:
             raise ValueError("'days_since' can only be specified when find_past=False.")
 
@@ -103,7 +119,7 @@ class FundaScraper(object):
 
     @property
     def check_sort(self) -> str:
-        """Whether sort complies"""
+        """Validates the 'sort' attribute."""
         if self.sort in [
             None,
             "relevancy",
@@ -124,13 +140,13 @@ class FundaScraper(object):
 
     @staticmethod
     def _check_dir() -> None:
-        """Check whether a temporary directory for data"""
+        """Ensures the existence of the directory for storing data."""
         if not os.path.exists("data"):
             os.makedirs("data")
 
     @staticmethod
     def _get_links_from_one_parent(url: str) -> List[str]:
-        """Scrape all the available housing items from one Funda search page."""
+        """Scrapes all available property links from a single Funda search page."""
         response = requests.get(url, headers=config.header)
         soup = BeautifulSoup(response.text, "lxml")
 
@@ -154,7 +170,7 @@ class FundaScraper(object):
         max_floor_area: Optional[str] = None,
         sort: Optional[str] = None,
     ) -> None:
-        """Overwrite or initialise the searching scope."""
+        """Resets or initializes the search parameters."""
         if area is not None:
             self.area = area
         if property_type is not None:
@@ -180,10 +196,14 @@ class FundaScraper(object):
         if sort is not None:
             self.sort = sort
 
-    def remove_duplicates(self, lst):
+    @staticmethod
+    def remove_duplicates(lst: List[str]) -> List[str]:
+        """Removes duplicate links from a list."""
         return list(OrderedDict.fromkeys(lst))
 
-    def fix_link(self, link: str) -> str:
+    @staticmethod
+    def fix_link(link: str) -> str:
+        """Fixes a given property link to ensure proper URL formatting."""
         link_url = urlparse(link)
         link_path = link_url.path.split("/")
         property_id = link_path.pop(5)
@@ -191,13 +211,13 @@ class FundaScraper(object):
         link_path = link_path[2:4]
         property_address.insert(1, property_id)
         link_path.extend(["-".join(property_address), "?old_ldp=true"])
-
-        return urlunparse(
+        fixed_link = urlunparse(
             (link_url.scheme, link_url.netloc, "/".join(link_path), "", "", "")
         )
+        return fixed_link
 
     def fetch_all_links(self, page_start: int = None, n_pages: int = None) -> None:
-        """Find all the available links across multiple pages."""
+        """Collects all available property links across multiple pages."""
 
         page_start = self.page_start if page_start is None else page_start
         n_pages = self.n_pages if n_pages is None else n_pages
@@ -218,14 +238,15 @@ class FundaScraper(object):
                 break
 
         urls = self.remove_duplicates(urls)
-        urls = [self.fix_link(url) for url in urls]
+        fixed_urls = [self.fix_link(url) for url in urls]
 
         logger.info(
-            f"*** Got all the urls. {len(urls)} houses found from {self.page_start} to {self.page_end} ***"
+            f"*** Got all the urls. {len(fixed_urls)} houses found from {self.page_start} to {self.page_end} ***"
         )
-        self.links = urls
+        self.links = fixed_urls
 
     def _build_main_query_url(self) -> str:
+        """Constructs the main query URL for the search."""
         query = "koop" if self.to_buy else "huur"
 
         main_url = (
@@ -263,7 +284,7 @@ class FundaScraper(object):
 
     @staticmethod
     def get_value_from_css(soup: BeautifulSoup, selector: str) -> str:
-        """Use CSS selector to find certain features."""
+        """Extracts data from HTML using a CSS selector."""
         result = soup.select(selector)
         if len(result) > 0:
             result = result[0].text
@@ -272,7 +293,7 @@ class FundaScraper(object):
         return result
 
     def scrape_one_link(self, link: str) -> List[str]:
-        """Scrape all the features from one house item given a link."""
+        """Scrapes data from a single property link."""
 
         # Initialize for each page
         response = requests.get(link, headers=config.header)
@@ -343,7 +364,7 @@ class FundaScraper(object):
         return result
 
     def scrape_pages(self) -> None:
-        """Scrape all the content across multiple pages."""
+        """Scrapes data from all collected property links."""
 
         logger.info("*** Phase 2: Start scraping from individual links ***")
         df = pd.DataFrame({key: [] for key in self.selectors.keys()})
@@ -364,7 +385,7 @@ class FundaScraper(object):
         self.raw_df = df
 
     def save_csv(self, df: pd.DataFrame, filepath: str = None) -> None:
-        """Save the result to a .csv file."""
+        """Saves the scraped data to a CSV file."""
         if filepath is None:
             self._check_dir()
             date = str(datetime.datetime.now().date()).replace("-", "")
@@ -378,7 +399,7 @@ class FundaScraper(object):
         self, raw_data: bool = False, save: bool = False, filepath: str = None
     ) -> pd.DataFrame:
         """
-        Scrape all links and all content.
+        Runs the full scraping process, optionally saving the results to a CSV file.
 
         :param raw_data: if true, the data won't be pre-processed
         :param save: if true, the data will be saved as a csv file

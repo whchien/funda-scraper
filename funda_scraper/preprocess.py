@@ -1,4 +1,5 @@
 """Preprocess raw data scraped from Funda"""
+
 import re
 from datetime import datetime, timedelta
 from typing import List, Union
@@ -85,12 +86,6 @@ def map_dutch_month(x: str) -> str:
         if x.find(k) != -1:
             x = x.replace(k, v)
     return x
-
-
-def get_neighbor(x: str) -> str:
-    """Find the neighborhood name."""
-    city = x.split("/")[0].replace("-", " ")
-    return x.lower().split(city)[-1]
 
 
 def clean_energy_label(x: str) -> str:

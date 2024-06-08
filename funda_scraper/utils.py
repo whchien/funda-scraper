@@ -1,4 +1,5 @@
 """Utilities for modules"""
+
 import logging
 
 logger = logging.getLogger("funda_scraper")

@@ -1,4 +1,4 @@
-"""Configuration used for scraping """
+"""Configuration used for scraping"""
 
 from pathlib import Path
 
