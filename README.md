@@ -45,7 +45,7 @@ df.head()
 ![image](static/example_df.png)
 
 
-* Note for Windows Users: Please add if __name__ == '__main__': before your script.
+* Note for Windows Users: Please add `if __name__ == "__main__":` before your script.
 
 ## Customizing Your Scraping
 You can pass several arguments to `FundaScraper()` for customized scraping:
