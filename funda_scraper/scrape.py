@@ -20,7 +20,7 @@ from funda_scraper.preprocess import clean_date_format, preprocess_data
 from funda_scraper.utils import logger
 
 
-class FundaScraper(object):
+class FundaScraper():
     """
     A class used to scrape real estate data from the Funda website.
     """
@@ -101,26 +101,25 @@ class FundaScraper(object):
         """Determines if the search is for buying or renting properties."""
         if self.want_to.lower() in ["buy", "koop", "b", "k"]:
             return True
-        elif self.want_to.lower() in ["rent", "huur", "r", "h"]:
+        if self.want_to.lower() in ["rent", "huur", "r", "h"]:
             return False
-        else:
-            raise ValueError("'want_to' must be either 'buy' or 'rent'.")
+        raise ValueError("'want_to' must be either 'buy' or 'rent'.")
 
     @property
-    def check_days_since(self) -> int:
+    def check_days_since(self) -> int | None:
         """Validates the 'days_since' attribute."""
         if self.find_past:
             raise ValueError("'days_since' can only be specified when find_past=False.")
 
-        if self.days_since in [None, 1, 3, 5, 10, 30]:
-            return self.days_since
-        else:
+        if self.days_since not in [None, 1, 3, 5, 10, 30]:
             raise ValueError("'days_since' must be either None, 1, 3, 5, 10 or 30.")
 
+        return self.days_since
+
     @property
-    def check_sort(self) -> str:
+    def check_sort(self) -> str | None:
         """Validates the 'sort' attribute."""
-        if self.sort in [
+        if self.sort not in [
             None,
             "relevancy",
             "date_down",
@@ -131,12 +130,12 @@ class FundaScraper(object):
             "plot_area_down",
             "city_up" "postal_code_up",
         ]:
-            return self.sort
-        else:
             raise ValueError(
                 "'sort' must be either None, 'relevancy', 'date_down', 'date_up', 'price_up', 'price_down', "
                 "'floor_area_down', 'plot_area_down', 'city_up' or 'postal_code_up'. "
             )
+
+        return self.sort
 
     @staticmethod
     def _check_dir() -> None:
@@ -147,7 +146,7 @@ class FundaScraper(object):
     @staticmethod
     def _get_links_from_one_parent(url: str) -> List[str]:
         """Scrapes all available property links from a single Funda search page."""
-        response = requests.get(url, headers=config.header)
+        response = requests.get(url, headers=config.header, timeout=60)
         soup = BeautifulSoup(response.text, "lxml")
 
         script_tag = soup.find_all("script", {"type": "application/ld+json"})[0]
@@ -234,14 +233,15 @@ class FundaScraper(object):
                 urls += item_list
             except IndexError:
                 self.page_end = i
-                logger.info(f"*** The last available page is {self.page_end} ***")
+                logger.info("*** The last available page is %s ***", self.page_end)
                 break
 
         urls = self.remove_duplicates(urls)
         fixed_urls = [self.fix_link(url) for url in urls]
 
         logger.info(
-            f"*** Got all the urls. {len(fixed_urls)} houses found from {self.page_start} to {self.page_end} ***"
+            "*** Got all the urls. %s houses found from %s to %s ***",
+            len(fixed_urls), self.page_start, self.page_end
         )
         self.links = fixed_urls
 
@@ -279,7 +279,7 @@ class FundaScraper(object):
         if self.sort is not None:
             main_url = f"{main_url}&sort=%22{self.check_sort}%22"
 
-        logger.info(f"*** Main URL: {main_url} ***")
+        logger.info("*** Main URL: %s ***", main_url)
         return main_url
 
     @staticmethod
@@ -296,7 +296,7 @@ class FundaScraper(object):
         """Scrapes data from a single property link."""
 
         # Initialize for each page
-        response = requests.get(link, headers=config.header)
+        response = requests.get(link, headers=config.header, timeout=60)
         soup = BeautifulSoup(response.text, "lxml")
 
         # Get the value according to respective CSS selectors
@@ -374,14 +374,14 @@ class FundaScraper(object):
         pools = mp.cpu_count()
         content = process_map(self.scrape_one_link, self.links, max_workers=pools)
 
-        for i, c in enumerate(content):
+        for c in content:
             df.loc[len(df)] = c
 
         df["city"] = df["url"].map(lambda x: x.split("/")[4])
         df["log_id"] = datetime.datetime.now().strftime("%Y%m-%d%H-%M%S")
         if not self.find_past:
             df = df.drop(["term", "price_sold", "date_sold"], axis=1)
-        logger.info(f"*** All scraping done: {df.shape[0]} results ***")
+        logger.info("*** All scraping done: %s results ***", df.shape[0])
         self.raw_df = df
 
     def save_csv(self, df: pd.DataFrame, filepath: str = None) -> None:
@@ -393,7 +393,7 @@ class FundaScraper(object):
             want_to = "buy" if self.to_buy else "rent"
             filepath = f"./data/houseprice_{date}_{self.area}_{want_to}_{status}_{len(self.links)}.csv"
         df.to_csv(filepath, index=False)
-        logger.info(f"*** File saved: {filepath}. ***")
+        logger.info("*** File saved: %s. ***", filepath)
 
     def run(
         self, raw_data: bool = False, save: bool = False, filepath: str = None
@@ -475,7 +475,8 @@ if __name__ == "__main__":
             "price_down",
             "floor_area_down",
             "plot_area_down",
-            "city_up" "postal_code_up",
+            "city_up",
+            "postal_code_up",
         ],
     )
     parser.add_argument(
