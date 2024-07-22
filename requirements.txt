@@ -6,6 +6,7 @@ diot==0.1.8
 idna==3.7
 inflection==0.5.1
 iniconfig==2.0.0
+lxml==5.2.2
 numpy==1.26.4
 packaging==24.1
 pandas==2.0.3
