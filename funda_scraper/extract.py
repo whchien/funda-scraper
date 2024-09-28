@@ -27,12 +27,12 @@ class DataExtractor(object):
         self.selectors = config.css_selector
         self.raw_df = pd.DataFrame()
         self.clean_df = pd.DataFrame()
+        self.file_repo = FileRepository()
 
-    def extract_data(self, to_buy: bool, find_past: bool, raw_data: bool, save: bool, file_path: str):
-        file_repo = FileRepository()
+    def extract_data(self, to_buy: bool, find_past: bool, raw_data: bool, save: bool, file_path: str) -> pd.DataFrame:
 
         df = pd.DataFrame({key: [] for key in self.selectors.keys()})
-        detail_pages = file_repo.get_detail_pages()
+        detail_pages = self.file_repo.get_detail_pages()
 
         for page in detail_pages:
             page_data = self.extract_data_from_page(page, to_buy, find_past)
@@ -56,6 +56,8 @@ class DataExtractor(object):
 
         if save:
             self.save_csv(df, file_path)
+
+        return df
 
 
     def extract_data_from_page(self, page: str, to_buy: bool, find_past: bool):

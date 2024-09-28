@@ -30,6 +30,19 @@ class FileRepository(object):
         if not os.path.exists(dir_name):
             os.makedirs(dir_name)
 
+    def get_list_pages(self) -> List[str]:
+        pages = []
+
+        for f in os.listdir(self.LISTPAGES_DIR):
+            file_path = os.path.join(self.LISTPAGES_DIR, f)
+
+            if os.path.isfile(file_path):
+                with open(file_path, 'r') as file:
+                    content = file.read()
+                    pages.append(content)
+
+        return pages
+
     def get_detail_pages(self) -> List[str]:
         pages = []
 
@@ -42,6 +55,16 @@ class FileRepository(object):
                     pages.append(content)
 
         return pages
+
+    def save_list_page(self, content: str, index: int):
+        with open(f'./data/listpages/listpage_{index}.html', 'w') as file:
+                file.write(content)
+
+    def save_detail_page(self, content: str, index: int):
+        with open(f'./data/detailpages/detailpage_{index}.html', 'w') as file:
+            file.write(content)
+
+
 
 
 
