@@ -138,11 +138,69 @@ class FundaScraper(object):
                 "'floor_area_down', 'plot_area_down', 'city_up' or 'postal_code_up'. "
             )
 
+    def _ensure_dir(self, dir_name: str):
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name)
+
     @staticmethod
     def _check_dir() -> None:
         """Ensures the existence of the directory for storing data."""
         if not os.path.exists("data"):
             os.makedirs("data")
+
+    def _get_list_pages(self, page_start: int = None, n_pages: int = None) -> None:
+        self._ensure_dir('data/listpages')
+
+        page_start = self.page_start if page_start is None else page_start
+        n_pages = self.n_pages if n_pages is None else n_pages
+
+        main_url = self._build_main_query_url()
+
+        for i in tqdm(range(page_start, page_start + n_pages)):
+            url = f"{main_url}&search_result={i}"
+            response = requests.get(url, headers = config.header)
+
+            with open(f'./data/listpages/listpage_{i}.html', 'w') as file:
+                file.write(response.text)
+
+        return
+
+    def _get_detail_pages(self):
+        listpages_dir = 'data/listpages'
+        self._ensure_dir(listpages_dir)
+        self._ensure_dir('data/detailpages')
+
+        urls = []
+
+        for f in os.listdir(listpages_dir):
+            file_path = os.path.join(listpages_dir, f)
+
+            if os.path.isfile(file_path):
+                with open(file_path, 'r') as file:
+                    content = file.read()
+                    soup = BeautifulSoup(content, "lxml")
+
+                    script_tag = soup.find_all("script", {"type": "application/ld+json"})[0]
+                    json_data = json.loads(script_tag.contents[0])
+                    item_list = [item["url"] for item in json_data["itemListElement"]]
+                    urls += item_list
+
+
+        urls = self.remove_duplicates(urls)
+        fixed_urls = [self.fix_link(url) for url in urls]
+
+        pools = mp.cpu_count()
+        content = process_map(self.scrape_one_link2, fixed_urls, max_workers=pools)
+
+        for i, c in enumerate(content):
+             with open(f'./data/detailpages/detailpage_{i}.html', 'w') as file:
+                file.write(c)
+
+
+    def scrape_one_link2(self, link: str) -> str:
+        response = requests.get(link, headers=config.header)
+        return response.text
+
 
     @staticmethod
     def _get_links_from_one_parent(url: str) -> List[str]:
@@ -292,11 +350,23 @@ class FundaScraper(object):
             result = "na"
         return result
 
+    def save_file(self, file_name: str):
+        self._check_dir()
+
+
+
     def scrape_one_link(self, link: str) -> List[str]:
         """Scrapes data from a single property link."""
 
         # Initialize for each page
         response = requests.get(link, headers=config.header)
+
+        with open('./data/test.html', 'w') as file:
+            file.write(response.content)
+
+        return
+
+
         soup = BeautifulSoup(response.text, "lxml")
 
         # Get the value according to respective CSS selectors
@@ -406,6 +476,10 @@ class FundaScraper(object):
         :param filepath: the name for the file
         :return: the (pre-processed) dataframe from scraping
         """
+        self._get_list_pages()
+        self._get_detail_pages()
+        return
+
         self.fetch_all_links()
         self.scrape_pages()
 

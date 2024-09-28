@@ -12,7 +12,8 @@ if __name__ == "__main__":
         # min_price=500,
         # max_price=2000
     )
-    df = scraper.run(raw_data=True, save=True, filepath="test.csv")
+    #df = scraper.run(raw_data=True, save=True, filepath="test.csv")
+    df = scraper.run(raw_data=True, save=True)
     df.head()
 
 
