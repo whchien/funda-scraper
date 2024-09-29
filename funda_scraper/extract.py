@@ -53,10 +53,8 @@ class DataExtractor(object):
             df = preprocess_data(df=self.raw_df, is_past=self.find_past)
             self.clean_df = df
 
-        print(df)
-
         if save:
-            self.save_csv(df, file_path)
+            self.file_repo.save_result_file(df, run_id)
 
         return df
 
@@ -132,19 +130,6 @@ class DataExtractor(object):
         result = [r.replace("\n", "").replace("\r", "").strip() for r in result]
         result.append(photos_string)
         return result
-
-
-    def save_csv(self, df: pd.DataFrame, filepath: str = None) -> None:
-        """Saves the scraped data to a CSV file."""
-        if filepath is None:
-            self._check_dir()
-            date = str(datetime.datetime.now().date()).replace("-", "")
-            status = "unavailable" if self.find_past else "unavailable"
-            want_to = "buy" if self.to_buy else "rent"
-            filepath = f"./data/houseprice_{date}_{self.area}_{want_to}_{status}_{len(self.links)}.csv"
-        df.to_csv(filepath, index=False)
-        logger.info(f"*** File saved: {filepath}. ***")
-
 
     @staticmethod
     def get_value_from_css(soup: BeautifulSoup, selector: str) -> str:

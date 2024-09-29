@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 from urllib.parse import urlparse, urlunparse
 from tqdm.contrib.concurrent import process_map
 
@@ -68,6 +69,13 @@ class FileRepository(object):
 
         with open(file_path, 'w') as file:
             file.write(content)
+
+    def save_result_file(self, df: pd.DataFrame, run_id: str):
+        """Saves the scraped data to a CSV file."""
+        file_path = os.path.join(self.DATA_DIR, run_id, "result.csv")
+
+        df.to_csv(file_path, index=False)
+        logger.info(f"*** File saved: {file_path}. ***")
 
     def _get_list_pages_dir_name(self, run_id: str):
         return os.path.join(self.DATA_DIR, run_id, self.LISTPAGES_DIR)
