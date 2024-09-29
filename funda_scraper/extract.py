@@ -20,6 +20,7 @@ from funda_scraper.preprocess import clean_date_format, preprocess_data
 from funda_scraper.utils import logger
 from funda_scraper.filerepository import FileRepository
 from funda_scraper.searchrequest import SearchRequest
+from funda_scraper.property import Property
 
 
 class DataExtractor(object):
@@ -30,20 +31,26 @@ class DataExtractor(object):
         self.clean_df = pd.DataFrame()
         self.file_repo = FileRepository()
 
+
     def extract_data(self, search_request: SearchRequest, run_id: str, clean_data: bool) -> pd.DataFrame:
 
-        df = pd.DataFrame({key: [] for key in self.selectors.keys()})
         detail_pages = self.file_repo.get_detail_pages(run_id)
 
-        for page in detail_pages:
-            page_data = self.extract_data_from_page(page, search_request)
-            df.loc[len(df)] = page_data
+        houses: list[Property] = []
 
-        df["city"] = df["url"].map(lambda x: x.split("/")[4])
-        df["log_id"] = datetime.datetime.now().strftime("%Y%m-%d%H-%M%S")
-        if not search_request.find_past:
-            df = df.drop(["term", "price_sold", "date_sold"], axis=1)
-        logger.info(f"*** All scraping done: {df.shape[0]} results ***")
+        for page in detail_pages:
+            house = self.extract_data_from_detail_page(page, search_request)
+            houses.append(house)
+
+        #df["log_id"] = datetime.datetime.now().strftime("%Y%m-%d%H-%M%S")
+
+        # if not search_request.find_past:
+        #     df = df.drop(["term", "price_sold", "date_sold"], axis=1)
+
+        logger.info(f"*** All scraping done: {len(houses)} results ***")
+
+        df = pd.DataFrame([vars(house) for house in houses])
+
         self.raw_df = df
 
         if not clean_data:
@@ -58,13 +65,17 @@ class DataExtractor(object):
         return df
 
 
-    def extract_data_from_page(self, page: str, search_request: SearchRequest):
+    def extract_data_from_detail_page(self, page: str, search_request: SearchRequest) -> Property:
         soup = BeautifulSoup(page, "lxml")
 
         script_tag = soup.find_all("script", {"type": "application/ld+json"})[0]
         json_data = json.loads(script_tag.contents[0])
 
         link = json_data["url"]
+        description = json_data["description"]
+        address = f"{json_data["address"]["streetAddress"]}"
+        city = json_data["address"]["addressLocality"]
+        price = f"{json_data["offers"]["priceCurrency"]} {json_data["offers"]["price"]}"
 
         # Get the value according to respective CSS selectors
         if search_request.to_buy:
@@ -78,57 +89,51 @@ class DataExtractor(object):
             else:
                 list_since_selector = ".fd-align-items-center:nth-child(7) span"
 
-        result = [
-            link,
-            self.get_value_from_css(soup, self.selectors.price),
-            self.get_value_from_css(soup, self.selectors.address),
-            self.get_value_from_css(soup, self.selectors.descrip),
-            self.get_value_from_css(soup, list_since_selector),
-            self.get_value_from_css(soup, self.selectors.zip_code),
-            self.get_value_from_css(soup, self.selectors.size),
-            self.get_value_from_css(soup, self.selectors.year),
-            self.get_value_from_css(soup, self.selectors.living_area),
-            self.get_value_from_css(soup, self.selectors.kind_of_house),
-            self.get_value_from_css(soup, self.selectors.building_type),
-            self.get_value_from_css(soup, self.selectors.num_of_rooms),
-            self.get_value_from_css(soup, self.selectors.num_of_bathrooms),
-            self.get_value_from_css(soup, self.selectors.layout),
-            self.get_value_from_css(soup, self.selectors.energy_label),
-            self.get_value_from_css(soup, self.selectors.insulation),
-            self.get_value_from_css(soup, self.selectors.heating),
-            self.get_value_from_css(soup, self.selectors.ownership),
-            self.get_value_from_css(soup, self.selectors.exteriors),
-            self.get_value_from_css(soup, self.selectors.parking),
-            self.get_value_from_css(soup, self.selectors.neighborhood_name),
-            self.get_value_from_css(soup, self.selectors.date_list),
-            self.get_value_from_css(soup, self.selectors.date_sold),
-            self.get_value_from_css(soup, self.selectors.term),
-            self.get_value_from_css(soup, self.selectors.price_sold),
-            self.get_value_from_css(soup, self.selectors.last_ask_price),
-            self.get_value_from_css(soup, self.selectors.last_ask_price_m2).split("\r")[
-                0
-            ],
-        ]
+        house = Property()
+        house.link = link
+        house.price = price
+        house.address = address
+        house.city = city
+        house.description = description
+        house.zip_code = self.get_value_from_css(soup, self.selectors.zip_code)
+        house.size = self.get_value_from_css(soup, self.selectors.size)
+        house.year_of_construction = self.get_value_from_css(soup, self.selectors.year)
+        house.living_area = self.get_value_from_css(soup, self.selectors.living_area)
+        house.kind_of_house = self.get_value_from_css(soup, self.selectors.kind_of_house)
+        house.building_type = self.get_value_from_css(soup, self.selectors.building_type)
+        house.number_of_rooms = self.get_value_from_css(soup, self.selectors.num_of_rooms)
+        house.number_of_bathrooms = self.get_value_from_css(soup, self.selectors.num_of_bathrooms)
+        house.layout = self.get_value_from_css(soup, self.selectors.layout),
+        house.energy_label = self.get_value_from_css(soup, self.selectors.energy_label)
+        house.insulation = self.get_value_from_css(soup, self.selectors.insulation)
+        house.heating = self.get_value_from_css(soup, self.selectors.heating)
+        house.ownership = self.get_value_from_css(soup, self.selectors.ownership)
+        house.exteriors = self.get_value_from_css(soup, self.selectors.exteriors)
+        house.parking = self.get_value_from_css(soup, self.selectors.parking)
+        house.neighborhood_name = self.get_value_from_css(soup, self.selectors.neighborhood_name)
+        house.date_list = self.get_value_from_css(soup, self.selectors.date_list)
+        house.date_sold = self.get_value_from_css(soup, self.selectors.date_sold)
+        house.term = self.get_value_from_css(soup, self.selectors.term)
+        house.price_sold = self.get_value_from_css(soup, self.selectors.price_sold)
+        house.last_ask_price = self.get_value_from_css(soup, self.selectors.last_ask_price)
+        house.last_ask_price_m2 = self.get_value_from_css(soup, self.selectors.last_ask_price_m2).split("\r")[0]
+        house.photos = [p.get("data-lazy-srcset") for p in soup.select(self.selectors.photo)]
 
         # Deal with list_since_selector especially, since its CSS varies sometimes
-        if clean_date_format(result[4]) == "na":
-            for i in range(6, 16):
-                selector = f".fd-align-items-center:nth-child({i}) span"
-                update_list_since = self.get_value_from_css(soup, selector)
-                if clean_date_format(update_list_since) == "na":
-                    pass
-                else:
-                    result[4] = update_list_since
+        # if clean_date_format(result[4]) == "na":
+        #     for i in range(6, 16):
+        #         selector = f".fd-align-items-center:nth-child({i}) span"
+        #         update_list_since = self.get_value_from_css(soup, selector)
+        #         if clean_date_format(update_list_since) == "na":
+        #             pass
+        #         else:
+        #             result[4] = update_list_since
 
-        photos_list = [
-            p.get("data-lazy-srcset") for p in soup.select(self.selectors.photo)
-        ]
-        photos_string = ", ".join(photos_list)
+        for key, value in house.__dict__.items():
+            formatted_value = self.format_string(value)
+            setattr(house, key, formatted_value)
 
-        # Clean up the retried result from one page
-        result = [r.replace("\n", "").replace("\r", "").strip() for r in result]
-        result.append(photos_string)
-        return result
+        return house
 
     @staticmethod
     def get_value_from_css(soup: BeautifulSoup, selector: str) -> str:
@@ -139,4 +144,12 @@ class DataExtractor(object):
         else:
             result = "na"
         return result
+
+
+    def format_string(self, value):
+        if type(value) == "str":
+            return value.replace("\n", "").replace("\r", "").strip()
+        else:
+            return value
+
 
