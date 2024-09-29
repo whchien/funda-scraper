@@ -5,6 +5,7 @@ import datetime
 import json
 import multiprocessing as mp
 import os
+import uuid
 from collections import OrderedDict
 from typing import List, Optional
 from urllib.parse import urlparse, urlunparse
@@ -78,6 +79,8 @@ class FundaScraper(object):
         self.clean_df = pd.DataFrame()
         self.base_url = config.base_url
         self.selectors = config.css_selector
+
+        self.run_id = str(uuid.uuid1())
 
         self.file_repo = FileRepository()
         self.data_extractor = DataExtractor()
@@ -154,14 +157,14 @@ class FundaScraper(object):
             url = f"{main_url}&search_result={i}"
             response = requests.get(url, headers = config.header)
 
-            self.file_repo.save_list_page(response.text, i)
+            self.file_repo.save_list_page(response.text, i, self.run_id)
 
         return
 
     def _get_detail_pages(self):
         urls = []
 
-        list_pages = self.file_repo.get_list_pages()
+        list_pages = self.file_repo.get_list_pages(self.run_id)
 
         for page in list_pages:
             soup = BeautifulSoup(page, "lxml")
@@ -177,7 +180,7 @@ class FundaScraper(object):
         content = process_map(self.scrape_one_link, fixed_urls, max_workers=pools)
 
         for i, c in enumerate(content):
-             self.file_repo.save_detail_page(c, i)
+             self.file_repo.save_detail_page(c, i, self.run_id)
 
 
     def scrape_one_link(self, link: str) -> str:
@@ -294,6 +297,9 @@ class FundaScraper(object):
         logger.info(f"*** Main URL: {main_url} ***")
         return main_url
 
+    def _get_pages(self):
+        self._get_list_pages()
+        self._get_detail_pages()
 
     def run(self, raw_data: bool = False, save: bool = False, filepath: str = None) -> pd.DataFrame:
         """
@@ -304,11 +310,10 @@ class FundaScraper(object):
         :param filepath: the name for the file
         :return: the (pre-processed) dataframe from scraping
         """
-        self._get_list_pages()
-        self._get_detail_pages()
+        self._get_pages()
 
         df = self.data_extractor.extract_data(to_buy = self.to_buy, find_past = self.find_past, raw_data = raw_data
-                                  , save = save, file_path = filepath)
+                                  , save = save, file_path = filepath, run_id = self.run_id)
 
         logger.info("*** Done! ***")
 

@@ -4,6 +4,7 @@ import datetime
 import json
 import multiprocessing as mp
 import os
+import uuid
 from collections import OrderedDict
 from typing import List, Optional
 from urllib.parse import urlparse, urlunparse
@@ -29,10 +30,10 @@ class DataExtractor(object):
         self.clean_df = pd.DataFrame()
         self.file_repo = FileRepository()
 
-    def extract_data(self, to_buy: bool, find_past: bool, raw_data: bool, save: bool, file_path: str) -> pd.DataFrame:
+    def extract_data(self, to_buy: bool, find_past: bool, raw_data: bool, save: bool, file_path: str, run_id: str) -> pd.DataFrame:
 
         df = pd.DataFrame({key: [] for key in self.selectors.keys()})
-        detail_pages = self.file_repo.get_detail_pages()
+        detail_pages = self.file_repo.get_detail_pages(run_id)
 
         for page in detail_pages:
             page_data = self.extract_data_from_page(page, to_buy, find_past)
