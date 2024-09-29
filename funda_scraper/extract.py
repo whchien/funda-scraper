@@ -18,8 +18,8 @@ from tqdm.contrib.concurrent import process_map
 from funda_scraper.config.core import config
 from funda_scraper.preprocess import clean_date_format, preprocess_data
 from funda_scraper.utils import logger
-
 from funda_scraper.filerepository import FileRepository
+from funda_scraper.searchrequest import SearchRequest
 
 
 class DataExtractor(object):
@@ -30,36 +30,35 @@ class DataExtractor(object):
         self.clean_df = pd.DataFrame()
         self.file_repo = FileRepository()
 
-    def extract_data(self, to_buy: bool, find_past: bool, raw_data: bool, save: bool, file_path: str, run_id: str) -> pd.DataFrame:
+    def extract_data(self, search_request: SearchRequest, run_id: str, clean_data: bool) -> pd.DataFrame:
 
         df = pd.DataFrame({key: [] for key in self.selectors.keys()})
         detail_pages = self.file_repo.get_detail_pages(run_id)
 
         for page in detail_pages:
-            page_data = self.extract_data_from_page(page, to_buy, find_past)
+            page_data = self.extract_data_from_page(page, search_request)
             df.loc[len(df)] = page_data
 
         df["city"] = df["url"].map(lambda x: x.split("/")[4])
         df["log_id"] = datetime.datetime.now().strftime("%Y%m-%d%H-%M%S")
-        if not find_past:
+        if not search_request.find_past:
             df = df.drop(["term", "price_sold", "date_sold"], axis=1)
         logger.info(f"*** All scraping done: {df.shape[0]} results ***")
         self.raw_df = df
 
-        if raw_data:
+        if not clean_data:
             df = self.raw_df
         else:
             logger.info("*** Cleaning data ***")
-            df = preprocess_data(df=self.raw_df, is_past=self.find_past)
+            df = preprocess_data(df = self.raw_df, is_past = search_request.find_past)
             self.clean_df = df
 
-        if save:
-            self.file_repo.save_result_file(df, run_id)
+        self.file_repo.save_result_file(df, run_id)
 
         return df
 
 
-    def extract_data_from_page(self, page: str, to_buy: bool, find_past: bool):
+    def extract_data_from_page(self, page: str, search_request: SearchRequest):
         soup = BeautifulSoup(page, "lxml")
 
         script_tag = soup.find_all("script", {"type": "application/ld+json"})[0]
@@ -68,13 +67,13 @@ class DataExtractor(object):
         link = json_data["url"]
 
         # Get the value according to respective CSS selectors
-        if to_buy:
-            if find_past:
+        if search_request.to_buy:
+            if search_request.find_past:
                 list_since_selector = self.selectors.date_list
             else:
                 list_since_selector = self.selectors.listed_since
         else:
-            if find_past:
+            if search_request.find_past:
                 list_since_selector = ".fd-align-items-center:nth-child(9) span"
             else:
                 list_since_selector = ".fd-align-items-center:nth-child(7) span"

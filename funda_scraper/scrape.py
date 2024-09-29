@@ -21,6 +21,7 @@ from funda_scraper.preprocess import clean_date_format, preprocess_data
 from funda_scraper.utils import logger
 from funda_scraper.extract import DataExtractor
 from funda_scraper.filerepository import FileRepository
+from funda_scraper.searchrequest import SearchRequest
 
 
 class FundaScraper(object):
@@ -28,21 +29,7 @@ class FundaScraper(object):
     A class used to scrape real estate data from the Funda website.
     """
 
-    def __init__(
-        self,
-        area: str,
-        want_to: str,
-        page_start: int = 1,
-        n_pages: int = 1,
-        find_past: bool = False,
-        min_price: Optional[int] = None,
-        max_price: Optional[int] = None,
-        days_since: Optional[int] = None,
-        property_type: Optional[str] = None,
-        min_floor_area: Optional[str] = None,
-        max_floor_area: Optional[str] = None,
-        sort: Optional[str] = None,
-    ):
+    def __init__(self, search_request):
         """
 
         :param area: The area to search for properties, formatted for URL compatibility.
@@ -58,108 +45,38 @@ class FundaScraper(object):
         :param max_floor_area: The maximum floor area for the property search.
         :param sort: The sorting criterion for the search results.
         """
-        # Init attributes
-        self.area = area.lower().replace(" ", "-")
-        self.property_type = property_type
-        self.want_to = want_to
-        self.find_past = find_past
-        self.page_start = max(page_start, 1)
-        self.n_pages = max(n_pages, 1)
-        self.page_end = self.page_start + self.n_pages - 1
-        self.min_price = min_price
-        self.max_price = max_price
-        self.days_since = days_since
-        self.min_floor_area = min_floor_area
-        self.max_floor_area = max_floor_area
-        self.sort = sort
+        self.search_request = search_request
 
         # Instantiate along the way
         self.links: List[str] = []
         self.raw_df = pd.DataFrame()
         self.clean_df = pd.DataFrame()
         self.base_url = config.base_url
-        self.selectors = config.css_selector
 
         self.run_id = str(uuid.uuid1())
 
         self.file_repo = FileRepository()
         self.data_extractor = DataExtractor()
 
+
     def __repr__(self):
-        return (
-            f"FundaScraper(area={self.area}, "
-            f"want_to={self.want_to}, "
-            f"n_pages={self.n_pages}, "
-            f"page_start={self.page_start}, "
-            f"find_past={self.find_past}, "
-            f"min_price={self.min_price}, "
-            f"max_price={self.max_price}, "
-            f"days_since={self.days_since}, "
-            f"min_floor_area={self.min_floor_area}, "
-            f"max_floor_area={self.max_floor_area}, "
-            f"find_past={self.find_past})"
-            f"min_price={self.min_price})"
-            f"max_price={self.max_price})"
-            f"days_since={self.days_since})"
-            f"sort={self.sort})"
-        )
+        return str(self.search_request)
 
-    @property
-    def to_buy(self) -> bool:
-        """Determines if the search is for buying or renting properties."""
-        if self.want_to.lower() in ["buy", "koop", "b", "k"]:
-            return True
-        elif self.want_to.lower() in ["rent", "huur", "r", "h"]:
-            return False
-        else:
-            raise ValueError("'want_to' must be either 'buy' or 'rent'.")
-
-    @property
-    def check_days_since(self) -> int:
-        """Validates the 'days_since' attribute."""
-        if self.find_past:
-            raise ValueError("'days_since' can only be specified when find_past=False.")
-
-        if self.days_since in [None, 1, 3, 5, 10, 30]:
-            return self.days_since
-        else:
-            raise ValueError("'days_since' must be either None, 1, 3, 5, 10 or 30.")
-
-    @property
-    def check_sort(self) -> str:
-        """Validates the 'sort' attribute."""
-        if self.sort in [
-            None,
-            "relevancy",
-            "date_down",
-            "date_up",
-            "price_up",
-            "price_down",
-            "floor_area_down",
-            "plot_area_down",
-            "city_up" "postal_code_up",
-        ]:
-            return self.sort
-        else:
-            raise ValueError(
-                "'sort' must be either None, 'relevancy', 'date_down', 'date_up', 'price_up', 'price_down', "
-                "'floor_area_down', 'plot_area_down', 'city_up' or 'postal_code_up'. "
-            )
 
     def _get_list_pages(self, page_start: int = None, n_pages: int = None) -> None:
 
-        page_start = self.page_start if page_start is None else page_start
-        n_pages = self.n_pages if n_pages is None else n_pages
+        page_start = self.search_request.page_start if page_start is None else page_start
+        n_pages = self.search_request.n_pages if n_pages is None else n_pages
 
         main_url = self._build_main_query_url()
 
         for i in tqdm(range(page_start, page_start + n_pages)):
             url = f"{main_url}&search_result={i}"
             response = requests.get(url, headers = config.header)
-
             self.file_repo.save_list_page(response.text, i, self.run_id)
 
         return
+
 
     def _get_detail_pages(self):
         urls = []
@@ -199,47 +116,6 @@ class FundaScraper(object):
         urls = [item["url"] for item in json_data["itemListElement"]]
         return urls
 
-    def reset(
-        self,
-        area: Optional[str] = None,
-        property_type: Optional[str] = None,
-        want_to: Optional[str] = None,
-        page_start: Optional[int] = None,
-        n_pages: Optional[int] = None,
-        find_past: Optional[bool] = None,
-        min_price: Optional[int] = None,
-        max_price: Optional[int] = None,
-        days_since: Optional[int] = None,
-        min_floor_area: Optional[str] = None,
-        max_floor_area: Optional[str] = None,
-        sort: Optional[str] = None,
-    ) -> None:
-        """Resets or initializes the search parameters."""
-        if area is not None:
-            self.area = area
-        if property_type is not None:
-            self.property_type = property_type
-        if want_to is not None:
-            self.want_to = want_to
-        if page_start is not None:
-            self.page_start = max(page_start, 1)
-        if n_pages is not None:
-            self.n_pages = max(n_pages, 1)
-        if find_past is not None:
-            self.find_past = find_past
-        if min_price is not None:
-            self.min_price = min_price
-        if max_price is not None:
-            self.max_price = max_price
-        if days_since is not None:
-            self.days_since = days_since
-        if min_floor_area is not None:
-            self.min_floor_area = min_floor_area
-        if max_floor_area is not None:
-            self.max_floor_area = max_floor_area
-        if sort is not None:
-            self.sort = sort
-
     @staticmethod
     def remove_duplicates(lst: List[str]) -> List[str]:
         """Removes duplicate links from a list."""
@@ -262,37 +138,37 @@ class FundaScraper(object):
 
     def _build_main_query_url(self) -> str:
         """Constructs the main query URL for the search."""
-        query = "koop" if self.to_buy else "huur"
+        query = "koop" if self.search_request.to_buy else "huur"
 
         main_url = (
-            f"{self.base_url}/zoeken/{query}?selected_area=%5B%22{self.area}%22%5D"
+            f"{self.base_url}/zoeken/{query}?selected_area=%5B%22{self.search_request.area}%22%5D"
         )
 
-        if self.property_type:
-            property_types = self.property_type.split(",")
+        if self.search_request.property_type:
+            property_types = self.search_request.property_type.split(",")
             formatted_property_types = [
                 "%22" + prop_type + "%22" for prop_type in property_types
             ]
             main_url += f"&object_type=%5B{','.join(formatted_property_types)}%5D"
 
-        if self.find_past:
+        if self.search_request.find_past:
             main_url = f'{main_url}&availability=%5B"unavailable"%5D'
 
-        if self.min_price is not None or self.max_price is not None:
-            min_price = "" if self.min_price is None else self.min_price
-            max_price = "" if self.max_price is None else self.max_price
+        if self.search_request.min_price is not None or self.search_request.max_price is not None:
+            min_price = "" if self.search_request.min_price is None else self.search_request.min_price
+            max_price = "" if self.search_request.max_price is None else self.search_request.max_price
             main_url = f"{main_url}&price=%22{min_price}-{max_price}%22"
 
-        if self.days_since is not None:
-            main_url = f"{main_url}&publication_date={self.check_days_since}"
+        if self.search_request.days_since is not None:
+            main_url = f"{main_url}&publication_date={self.search_request.check_days_since}"
 
-        if self.min_floor_area or self.max_floor_area:
-            min_floor_area = "" if self.min_floor_area is None else self.min_floor_area
-            max_floor_area = "" if self.max_floor_area is None else self.max_floor_area
+        if self.search_request.min_floor_area or self.search_request.max_floor_area:
+            min_floor_area = "" if self.search_request.min_floor_area is None else self.search_request.min_floor_area
+            max_floor_area = "" if self.search_request.max_floor_area is None else self.search_request.max_floor_area
             main_url = f"{main_url}&floor_area=%22{min_floor_area}-{max_floor_area}%22"
 
-        if self.sort is not None:
-            main_url = f"{main_url}&sort=%22{self.check_sort}%22"
+        if self.search_request.sort is not None:
+            main_url = f"{main_url}&sort=%22{self.search_request.sort_by}%22"
 
         logger.info(f"*** Main URL: {main_url} ***")
         return main_url
@@ -301,7 +177,7 @@ class FundaScraper(object):
         self._get_list_pages()
         self._get_detail_pages()
 
-    def run(self, raw_data: bool = False, save: bool = False, filepath: str = None) -> pd.DataFrame:
+    def run(self, clean_data: bool = False) -> pd.DataFrame:
         """
         Runs the full scraping process, optionally saving the results to a CSV file.
 
@@ -312,8 +188,7 @@ class FundaScraper(object):
         """
         self._get_pages()
 
-        df = self.data_extractor.extract_data(to_buy = self.to_buy, find_past = self.find_past, raw_data = raw_data
-                                  , save = save, file_path = filepath, run_id = self.run_id)
+        df = self.data_extractor.extract_data(self.search_request, self.run_id, clean_data)
 
         logger.info("*** Done! ***")
 
