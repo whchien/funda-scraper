@@ -32,22 +32,10 @@ class FundaScraper(object):
     def __init__(self, search_request):
         """
 
-        :param area: The area to search for properties, formatted for URL compatibility.
-        :param want_to: Specifies whether the user wants to buy or rent properties.
-        :param page_start: The starting page number for the search.
-        :param n_pages: The number of pages to scrape.
-        :param find_past: Flag to indicate whether to find past listings.
-        :param min_price: The minimum price for the property search.
-        :param max_price: The maximum price for the property search.
-        :param days_since: The maximum number of days since the listing was published.
-        :param property_type: The type of property to search for.
-        :param min_floor_area: The minimum floor area for the property search.
-        :param max_floor_area: The maximum floor area for the property search.
-        :param sort: The sorting criterion for the search results.
+        :param search_request: The parameters for the search
         """
         self.search_request = search_request
 
-        # Instantiate along the way
         self.links: List[str] = []
         self.raw_df = pd.DataFrame()
         self.clean_df = pd.DataFrame()
@@ -63,14 +51,14 @@ class FundaScraper(object):
         return str(self.search_request)
 
 
-    def _get_list_pages(self, page_start: int = None, n_pages: int = None) -> None:
+    def _get_list_pages(self, page_start: int = None, number_of_pages: int = None) -> None:
 
         page_start = self.search_request.page_start if page_start is None else page_start
-        n_pages = self.search_request.n_pages if n_pages is None else n_pages
+        number_of_pages = self.search_request.number_of_pages if number_of_pages is None else number_of_pages
 
         main_url = self._build_main_query_url()
 
-        for i in tqdm(range(page_start, page_start + n_pages)):
+        for i in tqdm(range(page_start, page_start + number_of_pages)):
             url = f"{main_url}&search_result={i}"
             response = requests.get(url, headers = config.header)
             self.file_repo.save_list_page(response.text, i, self.run_id)
@@ -116,10 +104,12 @@ class FundaScraper(object):
         urls = [item["url"] for item in json_data["itemListElement"]]
         return urls
 
+
     @staticmethod
     def remove_duplicates(lst: List[str]) -> List[str]:
         """Removes duplicate links from a list."""
         return list(OrderedDict.fromkeys(lst))
+
 
     @staticmethod
     def fix_link(link: str) -> str:
@@ -135,6 +125,7 @@ class FundaScraper(object):
             (link_url.scheme, link_url.netloc, "/".join(link_path), "", "", "")
         )
         return fixed_link
+
 
     def _build_main_query_url(self) -> str:
         """Constructs the main query URL for the search."""
@@ -173,21 +164,25 @@ class FundaScraper(object):
         logger.info(f"*** Main URL: {main_url} ***")
         return main_url
 
+
     def _get_pages(self):
         self._get_list_pages()
         self._get_detail_pages()
 
+
     def run(self, clean_data: bool = False) -> pd.DataFrame:
         """
-        Runs the full scraping process, optionally saving the results to a CSV file.
+        Runs the full scraping process, saving the results to a CSV file.
 
-        :param raw_data: if true, the data won't be pre-processed
-        :param save: if true, the data will be saved as a csv file
-        :param filepath: the name for the file
+        :param clean_data: if true, the data won't be pre-processed
         :return: the (pre-processed) dataframe from scraping
         """
+        logger.info(f"Started scraping, run_id: {self.run_id}")
+
+        logger.info("Fetching pages..")
         self._get_pages()
 
+        logger.info("Extracting data from the html pages")
         df = self.data_extractor.extract_data(self.search_request, self.run_id, clean_data)
 
         logger.info("*** Done! ***")
@@ -219,7 +214,7 @@ if __name__ == "__main__":
         "--page_start", type=int, help="Specify which page to start scraping", default=1
     )
     parser.add_argument(
-        "--n_pages", type=int, help="Specify how many pages to scrape", default=1
+        "--number_of_pages", type=int, help="Specify how many pages to scrape", default=1
     )
     parser.add_argument(
         "--min_price", type=int, help="Specify the min price", default=None
@@ -267,7 +262,7 @@ if __name__ == "__main__":
         want_to=args.want_to,
         find_past=args.find_past,
         page_start=args.page_start,
-        n_pages=args.n_pages,
+        number_of_pages=args.number_of_pages,
         min_price=args.min_price,
         max_price=args.max_price,
         days_since=args.days_since,

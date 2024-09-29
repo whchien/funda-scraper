@@ -8,7 +8,7 @@ class SearchRequest(object):
         area: str,
         want_to: str,
         page_start: int = 1,
-        n_pages: int = 1,
+        number_of_pages: int = 1,
         find_past: bool = False,
         min_price: Optional[int] = None,
         max_price: Optional[int] = None,
@@ -23,7 +23,7 @@ class SearchRequest(object):
         :param area: The area to search for properties, formatted for URL compatibility.
         :param want_to: Specifies whether the user wants to buy or rent properties.
         :param page_start: The starting page number for the search.
-        :param n_pages: The number of pages to scrape.
+        :param number_of_pages: The number of pages to scrape.
         :param find_past: Flag to indicate whether to find past listings.
         :param min_price: The minimum price for the property search.
         :param max_price: The maximum price for the property search.
@@ -39,8 +39,8 @@ class SearchRequest(object):
         self.want_to = want_to
         self.find_past = find_past
         self.page_start = max(page_start, 1)
-        self.n_pages = max(n_pages, 1)
-        self.page_end = self.page_start + self.n_pages - 1
+        self.number_of_pages = max(number_of_pages, 1)
+        self.page_end = self.page_start + self.number_of_pages - 1
         self.min_price = min_price
         self.max_price = max_price
         self.days_since = days_since
@@ -52,7 +52,7 @@ class SearchRequest(object):
         return (
             f"FundaScraper(area={self.area}, "
             f"want_to={self.want_to}, "
-            f"n_pages={self.n_pages}, "
+            f"number_of_pages={self.number_of_pages}, "
             f"page_start={self.page_start}, "
             f"find_past={self.find_past}, "
             f"min_price={self.min_price}, "
@@ -113,7 +113,7 @@ class SearchRequest(object):
         property_type: Optional[str] = None,
         want_to: Optional[str] = None,
         page_start: Optional[int] = None,
-        n_pages: Optional[int] = None,
+        number_of_pages: Optional[int] = None,
         find_past: Optional[bool] = None,
         min_price: Optional[int] = None,
         max_price: Optional[int] = None,
@@ -131,8 +131,8 @@ class SearchRequest(object):
             self.want_to = want_to
         if page_start is not None:
             self.page_start = max(page_start, 1)
-        if n_pages is not None:
-            self.n_pages = max(n_pages, 1)
+        if number_of_pages is not None:
+            self.number_of_pages = max(number_of_pages, 1)
         if find_past is not None:
             self.find_past = find_past
         if min_price is not None:

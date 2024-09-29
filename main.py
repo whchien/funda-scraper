@@ -9,7 +9,7 @@ if __name__ == "__main__":
                         want_to = "buy",
                         find_past = False,
                         page_start = 1,
-                        n_pages = 3,
+                        number_of_pages = 3,
                         # min_price=500,
                         # max_price=2000
                     )
