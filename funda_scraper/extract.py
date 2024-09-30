@@ -49,6 +49,7 @@ class DataExtractor(object):
 
         logger.info(f"*** All scraping done: {len(houses)} results ***")
 
+        # It may be more intuitive to manipulate the Property objects instead of dataframes, but let's keep the dataframes approach for now
         df = pd.DataFrame([vars(house) for house in houses])
 
         self.raw_df = df
@@ -97,7 +98,7 @@ class DataExtractor(object):
         house.description = description
         house.zip_code = self.get_value_from_css(soup, self.selectors.zip_code)
         house.size = self.get_value_from_css(soup, self.selectors.size)
-        house.year_of_construction = self.get_value_from_css(soup, self.selectors.year)
+        house.year_of_construction = self.get_value_from_css(soup, self.selectors.year_of_construction)
         house.living_area = self.get_value_from_css(soup, self.selectors.living_area)
         house.kind_of_house = self.get_value_from_css(soup, self.selectors.kind_of_house)
         house.building_type = self.get_value_from_css(soup, self.selectors.building_type)
