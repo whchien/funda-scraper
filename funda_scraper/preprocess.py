@@ -159,6 +159,7 @@ def preprocess_data(
     """
 
     df = df.dropna()
+
     if not is_past:
         keep_cols = config.keep_cols.selling_data
     else:
@@ -168,9 +169,9 @@ def preprocess_data(
         keep_cols.extend(keep_extra_cols)
 
     # Info
-    df["house_id"] = df["url"].apply(lambda x: int(x.split("/")[-2].split("-")[1]))
-    df["house_type"] = df["url"].apply(lambda x: x.split("/")[-2].split("-")[0])
-    df = df[df["house_type"].isin(["appartement", "huis"])]
+    df["house_id"] = df["url"].apply(lambda x: int(x.split("/")[-2]))
+    #df["house_type"] = df["url"].apply(lambda x: x.split("/")[-2].split("-")[0])
+    #df = df[df["house_type"].isin(["appartement", "huis"])]
 
     # Price
     price_col = "price_sold" if is_past else "price"
@@ -184,13 +185,13 @@ def preprocess_data(
     df["zip"] = df["zip_code"].apply(lambda x: x[:4])
 
     # House layout
-    df["room"] = df["num_of_rooms"].apply(find_n_room)
-    df["bedroom"] = df["num_of_rooms"].apply(find_n_bedroom)
-    df["bathroom"] = df["num_of_bathrooms"].apply(find_n_bathroom)
+    df["room"] = df["number_of_rooms"].apply(find_n_room)
+    df["bedroom"] = df["number_of_rooms"].apply(find_n_bedroom)
+    df["bathroom"] = df["number_of_bathrooms"].apply(find_n_bathroom)
     df["energy_label"] = df["energy_label"].apply(clean_energy_label)
 
     # Time
-    df["year_built"] = df["year"].apply(clean_year).astype(int)
+    df["year_built"] = df["year_of_construction"].apply(clean_year).astype(int)
     df["house_age"] = datetime.now().year - df["year_built"]
 
     if is_past:

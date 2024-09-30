@@ -72,7 +72,7 @@ class DataExtractor(object):
         script_tag = soup.find_all("script", {"type": "application/ld+json"})[0]
         json_data = json.loads(script_tag.contents[0])
 
-        link = json_data["url"]
+        url = json_data["url"]
         description = json_data["description"]
         address = f"{json_data["address"]["streetAddress"]}"
         city = json_data["address"]["addressLocality"]
@@ -91,7 +91,7 @@ class DataExtractor(object):
                 list_since_selector = ".fd-align-items-center:nth-child(7) span"
 
         house = Property()
-        house.link = link
+        house.url = url
         house.price = price
         house.address = address
         house.city = city
@@ -100,7 +100,7 @@ class DataExtractor(object):
         house.size = self.get_value_from_css(soup, self.selectors.size)
         house.year_of_construction = self.get_value_from_css(soup, self.selectors.year_of_construction)
         house.living_area = self.get_value_from_css(soup, self.selectors.living_area)
-        house.kind_of_house = self.get_value_from_css(soup, self.selectors.kind_of_house)
+        house.house_type = self.get_value_from_css(soup, self.selectors.kind_of_house)
         house.building_type = self.get_value_from_css(soup, self.selectors.building_type)
         house.number_of_rooms = self.get_value_from_css(soup, self.selectors.num_of_rooms)
         house.number_of_bathrooms = self.get_value_from_css(soup, self.selectors.num_of_bathrooms)
