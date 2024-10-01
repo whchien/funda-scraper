@@ -28,7 +28,7 @@ keep_cols:
     # - ym_list
     # - year_list
     - description
-    - photos
+    # - photos
 css_selector:
   url: none
   price: "section.mt-6 > div:nth-child(2) > dl:nth-child(2) > dd:nth-child(2) > span:nth-child(1)"

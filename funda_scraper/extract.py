@@ -42,9 +42,6 @@ class DataExtractor(object):
             house = self.extract_data_from_detail_page(page, search_request)
             houses.append(house)
 
-        # if not search_request.find_past:
-        #     df = df.drop(["term", "price_sold", "date_sold"], axis=1)
-
         logger.info(f"*** All scraping done: {len(houses)} results ***")
 
         # It may be more intuitive to manipulate the Property objects instead of dataframes, but let's keep the dataframes approach for now
@@ -54,13 +51,16 @@ class DataExtractor(object):
                     for house in houses
                 ])
 
+        if not search_request.find_sold:
+            df = df.drop(["term", "price_sold", "date_sold"], axis=1)
+
         self.raw_df = df
 
         if not clean_data:
             df = self.raw_df
         else:
             logger.info("*** Cleaning data ***")
-            df = preprocess_data(df = self.raw_df, is_past = search_request.find_past)
+            df = preprocess_data(df = self.raw_df, is_past = search_request.find_sold)
             self.clean_df = df
 
         self.file_repo.save_result_file(df, run_id)
@@ -82,12 +82,12 @@ class DataExtractor(object):
 
         # Get the value according to respective CSS selectors
         if search_request.to_buy:
-            if search_request.find_past:
+            if search_request.find_sold:
                 list_since_selector = self.selectors.date_list
             else:
                 list_since_selector = self.selectors.listed_since
         else:
-            if search_request.find_past:
+            if search_request.find_sold:
                 list_since_selector = ".fd-align-items-center:nth-child(9) span"
             else:
                 list_since_selector = ".fd-align-items-center:nth-child(7) span"
@@ -121,16 +121,6 @@ class DataExtractor(object):
         house.last_ask_price = self.get_value_from_css(soup, self.selectors.last_ask_price)
         house.last_ask_price_m2 = self.get_value_from_css(soup, self.selectors.last_ask_price_m2).split("\r")[0]
         house.photos = self.get_photos(soup, house.url)
-
-        # Deal with list_since_selector especially, since its CSS varies sometimes
-        # if clean_date_format(result[4]) == "na":
-        #     for i in range(6, 16):
-        #         selector = f".fd-align-items-center:nth-child({i}) span"
-        #         update_list_since = self.get_value_from_css(soup, selector)
-        #         if clean_date_format(update_list_since) == "na":
-        #             pass
-        #         else:
-        #             result[4] = update_list_since
 
         for key, value in house.__dict__.items():
             formatted_value = self.format_string(value)

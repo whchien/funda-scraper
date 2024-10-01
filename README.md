@@ -39,7 +39,7 @@ from funda_scraper import FundaScraper
 scraper = FundaScraper(
     area="amsterdam",
     want_to="rent",
-    find_past=False,
+    find_sold=False,
     page_start=1,
     number_of_pages=3,
     min_price=500,
@@ -59,7 +59,7 @@ You can pass several arguments to `FundaScraper()` for customized scraping:
 
 - `area`: Specify the city or specific area you want to look for, e.g. Amsterdam, Utrecht, Rotterdam, etc.
 - `want_to`: Choose either `buy` or `rent` to find houses either for sale or for rent.
-- `find_past`: Set to `True` to find historical data; the default is `False`.
+- `find_sold`: Set to `True` to find historical data; the default is `False`.
 - `page_start`: Indicate which page to start scraping from; the default is `1`.
 - `number_of_pages`: Indicate how many pages to scrape; the default is `1`.
 - `min_price`: Indicate the lowest budget amount.

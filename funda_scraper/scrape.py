@@ -142,7 +142,7 @@ class FundaScraper(object):
             ]
             main_url += f"&object_type=%5B{','.join(formatted_property_types)}%5D"
 
-        if self.search_request.find_past:
+        if self.search_request.find_sold:
             main_url = f'{main_url}&availability=%5B"unavailable"%5D'
 
         if self.search_request.min_price is not None or self.search_request.max_price is not None:
@@ -206,7 +206,7 @@ if __name__ == "__main__":
         choices=["rent", "buy"],
     )
     parser.add_argument(
-        "--find_past",
+        "--find_sold",
         action="store_true",
         help="Indicate whether you want to use historical data",
     )
@@ -260,7 +260,7 @@ if __name__ == "__main__":
     scraper = FundaScraper(
         area=args.area,
         want_to=args.want_to,
-        find_past=args.find_past,
+        find_sold=args.find_sold,
         page_start=args.page_start,
         number_of_pages=args.number_of_pages,
         min_price=args.min_price,

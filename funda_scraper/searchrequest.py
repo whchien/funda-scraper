@@ -9,7 +9,7 @@ class SearchRequest(object):
         want_to: str,
         page_start: int = 1,
         number_of_pages: int = 1,
-        find_past: bool = False,
+        find_sold: bool = False,
         min_price: Optional[int] = None,
         max_price: Optional[int] = None,
         days_since: Optional[int] = None,
@@ -24,7 +24,7 @@ class SearchRequest(object):
         :param want_to: Specifies whether the user wants to buy or rent properties.
         :param page_start: The starting page number for the search.
         :param number_of_pages: The number of pages to scrape.
-        :param find_past: Flag to indicate whether to find past listings.
+        :param find_sold: Flag to indicate whether to find past listings.
         :param min_price: The minimum price for the property search.
         :param max_price: The maximum price for the property search.
         :param days_since: The maximum number of days since the listing was published.
@@ -37,7 +37,7 @@ class SearchRequest(object):
         self.area = area.lower().replace(" ", "-")
         self.property_type = property_type
         self.want_to = want_to
-        self.find_past = find_past
+        self.find_sold = find_sold
         self.page_start = max(page_start, 1)
         self.number_of_pages = max(number_of_pages, 1)
         self.page_end = self.page_start + self.number_of_pages - 1
@@ -54,13 +54,13 @@ class SearchRequest(object):
             f"want_to={self.want_to}, "
             f"number_of_pages={self.number_of_pages}, "
             f"page_start={self.page_start}, "
-            f"find_past={self.find_past}, "
+            f"find_sold={self.find_sold}, "
             f"min_price={self.min_price}, "
             f"max_price={self.max_price}, "
             f"days_since={self.days_since}, "
             f"min_floor_area={self.min_floor_area}, "
             f"max_floor_area={self.max_floor_area}, "
-            f"find_past={self.find_past})"
+            f"find_sold={self.find_sold})"
             f"min_price={self.min_price})"
             f"max_price={self.max_price})"
             f"days_since={self.days_since})"
@@ -80,8 +80,8 @@ class SearchRequest(object):
     @property
     def check_days_since(self) -> int:
         """Validates the 'days_since' attribute."""
-        if self.find_past:
-            raise ValueError("'days_since' can only be specified when find_past=False.")
+        if self.find_sold:
+            raise ValueError("'days_since' can only be specified when find_sold=False.")
 
         if self.days_since in [None, 1, 3, 5, 10, 30]:
             return self.days_since
@@ -114,7 +114,7 @@ class SearchRequest(object):
         want_to: Optional[str] = None,
         page_start: Optional[int] = None,
         number_of_pages: Optional[int] = None,
-        find_past: Optional[bool] = None,
+        find_sold: Optional[bool] = None,
         min_price: Optional[int] = None,
         max_price: Optional[int] = None,
         days_since: Optional[int] = None,
@@ -133,8 +133,8 @@ class SearchRequest(object):
             self.page_start = max(page_start, 1)
         if number_of_pages is not None:
             self.number_of_pages = max(number_of_pages, 1)
-        if find_past is not None:
-            self.find_past = find_past
+        if find_sold is not None:
+            self.find_sold = find_sold
         if min_price is not None:
             self.min_price = min_price
         if max_price is not None:
