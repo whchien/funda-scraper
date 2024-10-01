@@ -1,13 +1,11 @@
 """Main funda scraper module"""
 
 import argparse
-import datetime
 import json
 import multiprocessing as mp
-import os
 import uuid
 from collections import OrderedDict
-from typing import List, Optional
+from typing import List
 from urllib.parse import urlparse, urlunparse
 
 import pandas as pd
@@ -17,11 +15,9 @@ from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
 from funda_scraper.config.core import config
-from funda_scraper.preprocess import clean_date_format, preprocess_data
 from funda_scraper.utils import logger
 from funda_scraper.extract import DataExtractor
 from funda_scraper.filerepository import FileRepository
-from funda_scraper.searchrequest import SearchRequest
 
 
 class FundaScraper(object):

@@ -1,27 +1,15 @@
 
-import argparse
-import datetime
 import json
-import multiprocessing as mp
-import os
-import uuid
-from collections import OrderedDict
-from typing import List, Optional
-from urllib.parse import urlparse, urlunparse
-
 import pandas as pd
-import requests
 from bs4 import BeautifulSoup
-from tqdm import tqdm
-from tqdm.contrib.concurrent import process_map
+from typing import List
 
 from funda_scraper.config.core import config
-from funda_scraper.preprocess import clean_date_format, preprocess_data
+from funda_scraper.preprocess import preprocess_data
 from funda_scraper.utils import logger
 from funda_scraper.filerepository import FileRepository
 from funda_scraper.searchrequest import SearchRequest
 from funda_scraper.property import Property
-
 
 class DataExtractor(object):
 

@@ -1,12 +1,7 @@
 import os
 import pandas as pd
-from urllib.parse import urlparse, urlunparse
-from tqdm.contrib.concurrent import process_map
 
-from typing import List, Optional
-
-from funda_scraper.config.core import config
-from funda_scraper.preprocess import clean_date_format, preprocess_data
+from typing import List
 from funda_scraper.utils import logger
 
 
