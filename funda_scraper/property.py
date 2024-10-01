@@ -32,3 +32,10 @@ class Property():
     last_ask_price_m2 = None
     photos: list[str] = field(default_factory=list)
 
+    @property
+    def photos_string(self) -> bool:
+        if not self.photos or len(self.photos) == 0:
+            return ""
+        else:
+            return "|".join(self.photos)
+

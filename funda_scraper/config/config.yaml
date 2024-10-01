@@ -59,3 +59,4 @@ css_selector:
   last_ask_price: "section.mt-6 > div:nth-child(2) > dl:nth-child(2) > dd:nth-child(2) > span:nth-child(1)"
   last_ask_price_m2: "section.mt-6 > div:nth-child(2) > dl:nth-child(2) > dd:nth-child(4) > span:nth-child(1)"
   photo: ".media-viewer-overview__section-list-item--photo img[data-lazy]"
+  photos: "main > div:nth-child(1) ul > li:nth-child(1) > a > span:nth-child(3)"

@@ -42,15 +42,17 @@ class DataExtractor(object):
             house = self.extract_data_from_detail_page(page, search_request)
             houses.append(house)
 
-        #df["log_id"] = datetime.datetime.now().strftime("%Y%m-%d%H-%M%S")
-
         # if not search_request.find_past:
         #     df = df.drop(["term", "price_sold", "date_sold"], axis=1)
 
         logger.info(f"*** All scraping done: {len(houses)} results ***")
 
         # It may be more intuitive to manipulate the Property objects instead of dataframes, but let's keep the dataframes approach for now
-        df = pd.DataFrame([vars(house) for house in houses])
+        # Note that we are omitting the photos field, which is an array field, and include the photos_string property
+        df = pd.DataFrame([
+                    {**{k: v for k, v in vars(house).items() if k != 'photos'}, 'photos': house.photos_string}
+                    for house in houses
+                ])
 
         self.raw_df = df
 
@@ -118,7 +120,7 @@ class DataExtractor(object):
         house.price_sold = self.get_value_from_css(soup, self.selectors.price_sold)
         house.last_ask_price = self.get_value_from_css(soup, self.selectors.last_ask_price)
         house.last_ask_price_m2 = self.get_value_from_css(soup, self.selectors.last_ask_price_m2).split("\r")[0]
-        house.photos = [p.get("data-lazy-srcset") for p in soup.select(self.selectors.photo)]
+        house.photos = self.get_photos(soup, house.url)
 
         # Deal with list_since_selector especially, since its CSS varies sometimes
         # if clean_date_format(result[4]) == "na":
@@ -152,5 +154,23 @@ class DataExtractor(object):
             return value.replace("\n", "").replace("\r", "").strip()
         else:
             return value
+
+    def get_photos(self, soup: BeautifulSoup, url: str) -> List[str]:
+        number_of_photos = 0
+        try:
+            number_of_photos = int(self.get_value_from_css(soup, self.selectors.photos))
+        except:
+            number_of_photos = 0
+
+        photos: List[str] = []
+
+        if (number_of_photos > 0):
+            for i in range(1, number_of_photos + 1):
+                photo_url = f"{url}media/foto/{i}"
+                photos.append(photo_url)
+
+        return photos
+
+
 
 
