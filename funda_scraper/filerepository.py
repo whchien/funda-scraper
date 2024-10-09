@@ -33,7 +33,7 @@ class FileRepository(object):
         return pages
 
     def get_detail_pages(self, run_id: str) -> List[str]:
-        pages = []
+        pages = {}
 
         detail_pages_dir = self._get_detail_pages_dir_name(run_id)
 
@@ -43,7 +43,7 @@ class FileRepository(object):
             if os.path.isfile(file_path):
                 with open(file_path, 'r') as file:
                     content = file.read()
-                    pages.append(content)
+                    pages[f] = content
 
         return pages
 

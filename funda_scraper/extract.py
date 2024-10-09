@@ -28,19 +28,23 @@ class DataExtractor(object):
 
         houses: list[Property] = []
 
-        houses_with_processing_errors = 0
+        houses_with_processing_errors = []
 
         for page in tqdm(detail_pages, desc = "Processing detail pages.."):
             try:
-                house = self.extract_data_from_detail_page(page, search_request)
+                content = detail_pages[page]
+                house = self.extract_data_from_detail_page(content, search_request)
                 houses.append(house)
             except Exception as e:
                 logger.error(f"An error occurred while processing house: {e}; skipping this house")
                 logger.error("Traceback:", exc_info=True)
-                houses_with_processing_errors += 1
+                houses_with_processing_errors.append(page)
 
         logger.info(f"*** All scraping done: {len(houses)} results ***")
-        logger.info(f"There were {houses_with_processing_errors} houses that could not be processed")
+        logger.info(f"There were {len(houses_with_processing_errors)} houses that could not be processed")
+        for error_house in houses_with_processing_errors:
+            # TODO: move these to a separate errors folder or so
+            logger.info(f"Error: {error_house}")
 
         # It may be more intuitive to manipulate the Property objects instead of dataframes, but let's keep the dataframes approach for now
         # Note that we are omitting the photos field, which is an array field, and include the photos_string property
