@@ -11,6 +11,7 @@ keep_cols:
     - url
     - house_id
     - city
+    - neighborhood_name
     - house_type
     - building_type
     - price

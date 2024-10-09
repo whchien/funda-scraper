@@ -3,6 +3,8 @@ import json
 import pandas as pd
 from bs4 import BeautifulSoup
 from typing import List
+from tqdm import tqdm
+import traceback
 
 from funda_scraper.config.core import config
 from funda_scraper.preprocess import preprocess_data
@@ -26,11 +28,19 @@ class DataExtractor(object):
 
         houses: list[Property] = []
 
-        for page in detail_pages:
-            house = self.extract_data_from_detail_page(page, search_request)
-            houses.append(house)
+        houses_with_processing_errors = 0
+
+        for page in tqdm(detail_pages, desc = "Processing detail pages.."):
+            try:
+                house = self.extract_data_from_detail_page(page, search_request)
+                houses.append(house)
+            except Exception as e:
+                logger.error(f"An error occurred while processing house: {e}; skipping this house")
+                logger.error("Traceback:", exc_info=True)
+                houses_with_processing_errors += 1
 
         logger.info(f"*** All scraping done: {len(houses)} results ***")
+        logger.info(f"There were {houses_with_processing_errors} houses that could not be processed")
 
         # It may be more intuitive to manipulate the Property objects instead of dataframes, but let's keep the dataframes approach for now
         # Note that we are omitting the photos field, which is an array field, and include the photos_string property
