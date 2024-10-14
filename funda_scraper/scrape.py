@@ -3,6 +3,7 @@
 import argparse
 import datetime
 import json
+import time
 import multiprocessing as mp
 import os
 from collections import OrderedDict
@@ -38,11 +39,13 @@ class FundaScraper(object):
         property_type: Optional[str] = None,
         min_floor_area: Optional[str] = None,
         max_floor_area: Optional[str] = None,
+        min_plot_area: Optional[str] = None,
+        max_plot_area: Optional[str] = none,
         sort: Optional[str] = None,
     ):
         """
 
-        :param area: The area to search for properties, formatted for URL compatibility.
+        :param area: The area to search for properties, this can be a comma-seperated list, formatted for URL compatibility.
         :param want_to: Specifies whether the user wants to buy or rent properties.
         :param page_start: The starting page number for the search.
         :param n_pages: The number of pages to scrape.
@@ -53,10 +56,12 @@ class FundaScraper(object):
         :param property_type: The type of property to search for.
         :param min_floor_area: The minimum floor area for the property search.
         :param max_floor_area: The maximum floor area for the property search.
+        :param min_plot_area: The minimum plot area for the property search.
+        :param max_plot_area: The maximum plot area for the property search.
         :param sort: The sorting criterion for the search results.
         """
         # Init attributes
-        self.area = area.lower().replace(" ", "-")
+        self.area = area.lower().replace(" ", "-").replace(",","\",\"") #added functionality to add multiple cities, seperated by ', '
         self.property_type = property_type
         self.want_to = want_to
         self.find_past = find_past
@@ -68,6 +73,8 @@ class FundaScraper(object):
         self.days_since = days_since
         self.min_floor_area = min_floor_area
         self.max_floor_area = max_floor_area
+        self.min_plot_area = min_plot_area
+        self.max_plot_area = max_plot_area
         self.sort = sort
 
         # Instantiate along the way
@@ -89,6 +96,8 @@ class FundaScraper(object):
             f"days_since={self.days_since}, "
             f"min_floor_area={self.min_floor_area}, "
             f"max_floor_area={self.max_floor_area}, "
+            f"min_plot_area={self.min_plot_area}, "
+            f"max_plot_area={self.max_plot_area}, "
             f"find_past={self.find_past})"
             f"min_price={self.min_price})"
             f"max_price={self.max_price})"
@@ -168,6 +177,8 @@ class FundaScraper(object):
         days_since: Optional[int] = None,
         min_floor_area: Optional[str] = None,
         max_floor_area: Optional[str] = None,
+        min_plot_area: Optional[str] = None,
+        max_plot_area: Optional[str] = None,
         sort: Optional[str] = None,
     ) -> None:
         """Resets or initializes the search parameters."""
@@ -193,6 +204,10 @@ class FundaScraper(object):
             self.min_floor_area = min_floor_area
         if max_floor_area is not None:
             self.max_floor_area = max_floor_area
+        if min_plot_area is not None:
+            self.min_plot_area = min_plot_area
+        if max_plot_area is not None:
+            self.max_plot_area = max_plot_area
         if sort is not None:
             self.sort = sort
 
@@ -232,6 +247,7 @@ class FundaScraper(object):
                     f"{main_url}&search_result={i}"
                 )
                 urls += item_list
+                time.sleep(.5)
             except IndexError:
                 self.page_end = i
                 logger.info(f"*** The last available page is {self.page_end} ***")
@@ -270,6 +286,11 @@ class FundaScraper(object):
 
         if self.days_since is not None:
             main_url = f"{main_url}&publication_date={self.check_days_since}"
+        
+        if self.min_plot_area or self.max_plot_area:
+            min_plot_area = "" if self.min_plot_area is None else self.min_plot_area
+            max_plot_area = "" if self.max_plot_area is None else self.max_plot_area
+            main_url = f"{main_url}&plot_area=%22{min_plot_area}-{max_plot_area}%22"
 
         if self.min_floor_area or self.max_floor_area:
             min_floor_area = "" if self.min_floor_area is None else self.min_floor_area
@@ -456,10 +477,28 @@ if __name__ == "__main__":
         "--max_price", type=int, help="Specify the max price", default=None
     )
     parser.add_argument(
+        "--max_plot_area", type=int, help="Specify the max plot area", default=None
+    )
+    parser.add_argument(
+        "--max_floor_area", type=int, help="Specify the max floor area", default=None
+    )
+    parser.add_argument(
+        "--min_plot_area", type=int, help="Specify the min plot area", default=None
+    )
+    parser.add_argument(
+        "--min_floor_area", type=int, help="Specify the min floor area", default=None
+    )
+    parser.add_argument(
         "--days_since",
         type=int,
         help="Specify the days since publication",
         default=None,
+    )
+    parser.add_argument(
+        "--property_type",
+        type=str,
+        help="Specify the type of property(house, land, appartment)",
+        default="house",
     )
     parser.add_argument(
         "--sort",
@@ -498,6 +537,11 @@ if __name__ == "__main__":
         n_pages=args.n_pages,
         min_price=args.min_price,
         max_price=args.max_price,
+        min_plot_area=args.min_plot_area,
+        max_plot_area=args.max_plot_area,
+        min_floor_area=args.min_floor_area,
+        max_floor_area=args.max_floor_area,
+        property_type=args.property_type,
         days_since=args.days_since,
         sort=args.sort,
     )
