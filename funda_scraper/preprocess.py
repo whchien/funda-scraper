@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from typing import List, Union
 
 import pandas as pd
+import numpy as np
 from dateutil.parser import parse
 
 from funda_scraper.config.core import config
@@ -32,10 +33,28 @@ def clean_year(x: str) -> int:
         return 0
 
 
-def clean_living_area(x: str) -> int:
+def clean_m2(x: str) -> int:
     """Clean the 'living_area' and transform from string to integer"""
     try:
         return int(str(x).replace(",", "").split(" m²")[0])
+    except ValueError:
+        return 0
+    except IndexError:
+        return 0
+
+def clean_garden(x: str) -> int:
+    """Clean the 'living_area' and transform from string to integer"""
+    try:
+        return str(x).replace(" m²", " m2")
+    except ValueError:
+        return 0
+    except IndexError:
+        return 0
+    
+def clean_m3(x: str) -> int:
+    """Clean the 'living_area' and transform from string to integer"""
+    try:
+        return int(str(x).replace(",", "").split(" m³")[0])
     except ValueError:
         return 0
     except IndexError:
@@ -69,6 +88,10 @@ def find_n_bathroom(x: str) -> int:
     pattern = r"(\d{1,2}\s{1}badkamers{0,1})|(\d{1,2}\s{1}bathrooms{0,1})"
     return find_keyword_from_regex(x, pattern)
 
+def find_n_toilets(x: str) -> int:
+    """Find the number of bathrooms from a string"""
+    pattern = r"(\d{1,2}\s{1}apart{0,1})|(\d{1,2}\s{1}seperate{0,1})"
+    return find_keyword_from_regex(x, pattern)
 
 def map_dutch_month(x: str) -> str:
     """Map the month from Dutch to English."""
@@ -176,17 +199,28 @@ def preprocess_data(
     price_col = "price_sold" if is_past else "price"
     df["price"] = df[price_col].apply(clean_price)
     df = df[df["price"] != 0]
-    df["living_area"] = df["living_area"].apply(clean_living_area)
+    df["size"] = df["size"].apply(clean_m3)
+    df["balcony_size"] = df["balcony_size"].apply(clean_m2)
+    df["other_interior_area"] = df["other_interior_area"].apply(clean_m2)
+    df["other_exterior_area"] = df["other_exterior_area"].apply(clean_m2)
+    df["cadastralarea"] = df["cadastralarea"].apply(clean_m2)
+    df["exteriors"] = df["exteriors"].apply(clean_m2)
+    df["gardensize"] = df["gardensize"].apply(clean_garden)		
+    df['property_area'] = df['property_area'].apply(clean_m2)
+    df["living_area"] = df["living_area"].apply(clean_m2)
     df = df[df["living_area"] != 0]
     df["price_m2"] = round(df.price / df.living_area, 1)
+    df["price_m2grond"] = round(df.price / df.property_area,1)
+    df["price_m2grond"] = df["price_m2grond"].replace(np.inf, 0)
 
     # Location
-    df["zip"] = df["zip_code"].apply(lambda x: x[:4])
+    df["zip"] = df["zip_code"].apply(lambda x: x[:7])
 
     # House layout
-    df["room"] = df["num_of_rooms"].apply(find_n_room)
+    df["rooms"] = df["num_of_rooms"].apply(find_n_room)
     df["bedroom"] = df["num_of_rooms"].apply(find_n_bedroom)
     df["bathroom"] = df["num_of_bathrooms"].apply(find_n_bathroom)
+    df["toilets"] = df["num_of_bathrooms"].apply(find_n_toilets)
     df["energy_label"] = df["energy_label"].apply(clean_energy_label)
 
     # Time
