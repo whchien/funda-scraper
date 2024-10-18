@@ -10,7 +10,6 @@ from dateutil.parser import parse
 
 from funda_scraper.config.core import config
 
-
 def clean_price(x: str) -> int:
     """Clean the 'price' and transform from string to integer."""
     try:
@@ -19,7 +18,6 @@ def clean_price(x: str) -> int:
         return 0
     except IndexError:
         return 0
-
 
 def clean_year(x: str) -> int:
     """Clean the 'year' and transform from string to integer"""
@@ -32,34 +30,43 @@ def clean_year(x: str) -> int:
     else:
         return 0
 
-
 def clean_m2(x: str) -> int:
-    """Clean the 'living_area' and transform from string to integer"""
+    """Clean the 'm2' and transform from string to integer"""
     try:
-        return int(str(x).replace(",", "").split(" m²")[0])
+        return int(str(x).replace(".", "").split(" m²")[0])
     except ValueError:
         return 0
     except IndexError:
         return 0
 
 def clean_garden(x: str) -> int:
-    """Clean the 'living_area' and transform from string to integer"""
+    """Clean the 'gardensize' and transform to readable format m2"""
     try:
-        return str(x).replace(" m²", " m2")
+        pattern = r"(\d{1,5}\s{1}m2{0,1})"
+        return find_keyword_from_regex(str(x).replace(" m²", " m2"), pattern)
     except ValueError:
         return 0
     except IndexError:
         return 0
     
 def clean_m3(x: str) -> int:
-    """Clean the 'living_area' and transform from string to integer"""
+    """Clean the 'm3' and transform from string to integer"""
     try:
-        return int(str(x).replace(",", "").split(" m³")[0])
+        return int(str(x).replace(".", "").split(" m³")[0])
     except ValueError:
         return 0
     except IndexError:
         return 0
 
+def find_garden_depth(x: str) -> float:
+    """Find the number of bathrooms from a string"""
+    pattern = r"(\d{1,2},\d{1,2}\s{1}meter diep{0,1})|(\d{1,2},\d{1,2}\s{1}metre deep{0,1})"
+    return float_find_keyword_from_regex(x, pattern)
+
+def find_garden_width(x: str) -> float:
+    """Find the number of bathrooms from a string"""
+    pattern = r"(\d{1,2},\d{1,2}\s{1}meter breed{0,1})|(\d{1,2},\d{1,2}\s{1}metre wide{0,1})"
+    return float_find_keyword_from_regex(x, pattern)
 
 def find_keyword_from_regex(x: str, pattern: str) -> int:
     result = re.findall(pattern, x)
@@ -70,18 +77,15 @@ def find_keyword_from_regex(x: str, pattern: str) -> int:
         x = 0
     return int(x)
 
-
-def find_n_room(x: str) -> int:
-    """Find the number of rooms from a string"""
-    pattern = r"(\d{1,2}\s{1}kamers{0,1})|(\d{1,2}\s{1}rooms{0,1})"
-    return find_keyword_from_regex(x, pattern)
-
-
-def find_n_bedroom(x: str) -> int:
-    """Find the number of bedrooms from a string"""
-    pattern = r"(\d{1,2}\s{1}slaapkamers{0,1})|(\d{1,2}\s{1}bedrooms{0,1})"
-    return find_keyword_from_regex(x, pattern)
-
+def float_find_keyword_from_regex(x: str, pattern: str) -> float:
+    result = re.findall(pattern, x)
+    if len(result) > 0:
+        result = "".join(result[0])
+        x = result.split(" ")[0]
+        x = x.replace(",", ".")
+    else:
+        x = 0
+    return float(x)
 
 def find_n_bathroom(x: str) -> int:
     """Find the number of bathrooms from a string"""
@@ -110,7 +114,6 @@ def map_dutch_month(x: str) -> str:
             x = x.replace(k, v)
     return x
 
-
 def clean_energy_label(x: str) -> str:
     """Clean the energy labels."""
     try:
@@ -120,7 +123,6 @@ def clean_energy_label(x: str) -> str:
         return x
     except IndexError:
         return x
-
 
 def clean_date_format(x: str) -> Union[datetime, str]:
     """Transform the date from string to datetime object."""
@@ -195,19 +197,22 @@ def preprocess_data(
     df["house_type"] = df["url"].apply(lambda x: x.split("/")[-2].split("-")[0])
     df = df[df["house_type"].isin(["appartement", "huis"])]
 
-    # Price
-    price_col = "price_sold" if is_past else "price"
-    df["price"] = df[price_col].apply(clean_price)
-    df = df[df["price"] != 0]
-    df["size"] = df["size"].apply(clean_m3)
+    # Areas
+    df["volume"] = df["volume"].apply(clean_m3)
     df["balcony_size"] = df["balcony_size"].apply(clean_m2)
     df["other_interior_area"] = df["other_interior_area"].apply(clean_m2)
     df["other_exterior_area"] = df["other_exterior_area"].apply(clean_m2)
     df["cadastralarea"] = df["cadastralarea"].apply(clean_m2)
     df["exteriors"] = df["exteriors"].apply(clean_m2)
-    df["gardensize"] = df["gardensize"].apply(clean_garden)		
     df['property_area'] = df['property_area'].apply(clean_m2)
     df["living_area"] = df["living_area"].apply(clean_m2)
+    df["garden_width"] = df["garden_size"].apply(find_garden_width) # first before cleaning garden_size
+    df["garden_depth"] = df["garden_size"].apply(find_garden_depth) # first before cleaning garden_size
+    df["garden_size"] = df["garden_size"].apply(clean_garden)
+    # Price
+    price_col = "price_sold" if is_past else "price"
+    df["price"] = df[price_col].apply(clean_price)
+    df = df[df["price"] != 0]
     df = df[df["living_area"] != 0]
     df["price_m2"] = round(df.price / df.living_area, 1)
     df["price_m2grond"] = round(df.price / df.property_area,1)
@@ -217,14 +222,14 @@ def preprocess_data(
     df["zip"] = df["zip_code"].apply(lambda x: x[:7])
 
     # House layout
-    df["rooms"] = df["num_of_rooms"].apply(find_n_room)
-    df["bedroom"] = df["num_of_rooms"].apply(find_n_bedroom)
+    df["rooms"] = df["num_of_rooms"]
+    df["bedroom"] = df["num_of_bedrooms"]
     df["bathroom"] = df["num_of_bathrooms"].apply(find_n_bathroom)
     df["toilets"] = df["num_of_bathrooms"].apply(find_n_toilets)
     df["energy_label"] = df["energy_label"].apply(clean_energy_label)
 
     # Time
-    df["year_built"] = df["year"].apply(clean_year).astype(int)
+    df["year_built"] = df["year_built"].apply(clean_year).astype(int)
     df["house_age"] = datetime.now().year - df["year_built"]
 
     if is_past:
