@@ -20,7 +20,7 @@ keep_cols:
     - year_built
     - building_roofing
     - building_details
-    - size
+    - volume
     - living_area
     - property_area
     - balcony_size
@@ -51,7 +51,9 @@ keep_cols:
     - cadastralarea
     - location
     - garden
-    - gardensize
+    - garden_size
+    - garden_width
+    - garden_depth
     - gardenorientation
     - balcony
     - parking
@@ -109,7 +111,7 @@ css_selector:
   building_details:
     - "Id"
     - "bouw-bijzonderheden"
-  size: 
+  volume: 
     - "Id"
     - "afmetingen-inhoud"
   living_area: "woonoppervlakte"
@@ -171,7 +173,7 @@ css_selector:
   garden: 
     - "Id"
     - "buitenruimte-tuin"
-  gardensize:
+  garden_size:
     - "Id"
     - "buitenruimte-hoofdtuin"
   gardenorientation:
