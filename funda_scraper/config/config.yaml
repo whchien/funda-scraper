@@ -64,13 +64,14 @@ keep_cols:
     - monumentstatus
     - DIYhome
     - leasehold
-    - buurtid
+    - NeighourhoodId
     - photos
     - neighbourhood_price_m2
     - neighbourhood_families
     - sound
     - ppm25
     - no2
+    - log_id
 css_selector:
   url: "ContentUrl"
   price: 
@@ -97,7 +98,7 @@ css_selector:
   building_type: 
     - "Id"
     - "bouw-soortbouw"
-  year: 
+  year_built: 
     - "Label"
     - 
         - "Bouwjaar"
@@ -191,11 +192,11 @@ css_selector:
   monumentstatus: "monumentalestatus"
   DIYhome: "kluswoning"
   leasehold: "erfpacht"
-  buurtid: "BuurtIdentifier"
-  photos:
   term: 
   price_sold:
-  date_sold:
+  date_sold: 
+  NeighourhoodId: "BuurtIdentifier"
+  photos:
   neighbourhood_price_m2:
   neighbourhood_families:
   sound:
