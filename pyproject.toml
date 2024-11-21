@@ -1,5 +1,25 @@
-## pyproject.toml
-#
-#[build-system]
-#requires      = ["setuptools>=61.0.0", "wheel"]
-#build-backend = "setuptools.build_meta"
+[tool.poetry]
+name = "funda-scraper"
+version = "1.2.1"
+description = "FundaScaper provides the easiest way to perform web scraping on Funda, the Dutch housing website. You can find houses either for sale or for rent, and access historical data from the past few years."
+authors = ["Will Chien"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<4.0"
+pyyaml = ">=6.0,<7.0"
+diot = ">=0.1.6,<0.2.0"
+pandas = ">=2.0.3,<2.1.0"
+requests = ">=2.28.1,<2.29.0"
+beautifulsoup4 = ">=4.8.0,<4.9.0"
+tqdm = ">=4.64.1,<4.65.0"
+setuptools = ">=61.3.1,<61.4.0"
+python-dateutil = ">=2.8.2,<2.9.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7.1.3,<7.2.0"
+ruff = ">=0.4.8,<0.5.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -11,7 +11,7 @@ URL = "https://github.com/whchien/funda-scraper"
 DESCRIPTION = "FundaScaper provides you the easiest way to perform web scraping from Funda, the Dutch housing website."
 EMAIL = "locriginal@gmail.com"
 AUTHOR = "Will Chien"
-REQUIRES_PYTHON = ">=3.7.0"
+REQUIRES_PYTHON = ">=3.8,<4.0"
 
 about = {}
 ROOT_DIR = Path(__file__).resolve().parent
@@ -47,9 +47,10 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
     ],
