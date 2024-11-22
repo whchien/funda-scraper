@@ -24,18 +24,18 @@ def clean_year(x: str) -> int:
     """Clean the 'year' and transform from string to integer"""
     if len(x) == 4:
         return int(x)
-    elif x.find("-") != -1:
+    if x.find("-") != -1:
         return int(x.split("-")[0])
-    elif x.find("before") != -1:
+    if x.find("before") != -1:
         return int(x.split(" ")[1])
-    else:
-        return 0
+
+    return 0
 
 
 def clean_living_area(x: str) -> int:
     """Clean the 'living_area' and transform from string to integer"""
     try:
-        return int(str(x).replace(",", "").split(" m²")[0])
+        return int(str(x).replace(",", "").split(" m²", maxsplit=1)[0])
     except ValueError:
         return 0
     except IndexError:
@@ -46,7 +46,7 @@ def find_keyword_from_regex(x: str, pattern: str) -> int:
     result = re.findall(pattern, x)
     if len(result) > 0:
         result = "".join(result[0])
-        x = result.split(" ")[0]
+        x = result.split(" ", maxsplit=1)[0]
     else:
         x = 0
     return int(x)
@@ -123,7 +123,7 @@ def clean_date_format(x: str) -> Union[datetime, str]:
     }
 
     try:
-        if x.lower() in weekdays_dict.keys():
+        if x.lower() in weekdays_dict:
             date_string = weekdays_dict.get(x.lower())
             parsed_date = parse(date_string, fuzzy=True)
             delta = datetime.now().weekday() - parsed_date.weekday()
