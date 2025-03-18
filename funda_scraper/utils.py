@@ -50,18 +50,20 @@ def get_cookies(cookie_path : Path = COOKIE_PATH, url : str = URL):
         logger.info("Unable to accept policy, wait for user manually click...")
 
     while "Je bent bijna op de pagina die je zoekt" in driver.page_source:
-        print("douma")
-        time.sleep(10)
+        time.sleep(5)
     
     logger.info("Captcha is solved, extracting cookies...")
 
     # Save cookies after solving CAPTCHA
+    cookies = driver.get_cookies()
     if not os.path.isdir(cookie_path):
         os.makedirs(cookie_path)
     with open(cookie_path.joinpath("cookies.pkl").__str__(), "wb") as file:
-        pickle.dump(driver.get_cookies(), file)
+        pickle.dump(cookies, file)
 
     driver.quit()
+
+    return cookies
 
 
 if __name__=="__main__":

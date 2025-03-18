@@ -6,8 +6,9 @@ import json
 import multiprocessing as mp
 import os
 from collections import OrderedDict
-from typing import List, Optional
+from typing import List, Optional, Dict
 from urllib.parse import urlparse, urlunparse
+import pickle
 
 import pandas as pd
 import requests
@@ -17,7 +18,7 @@ from tqdm.contrib.concurrent import process_map
 
 from funda_scraper.config.core import config
 from funda_scraper.preprocess import clean_date_format, preprocess_data
-from funda_scraper.utils import logger
+from funda_scraper.utils import logger, get_cookies, COOKIE_PATH
 
 
 class FundaScraper(object):
@@ -76,6 +77,16 @@ class FundaScraper(object):
         self.clean_df = pd.DataFrame()
         self.base_url = config.base_url
         self.selectors = config.css_selector
+
+        # Get cookies
+        try:
+            with open(COOKIE_PATH.joinpath("cookies.pkl").__str__(), "rb") as file:
+                self.cookies = pickle.load(file)
+        except FileNotFoundError:
+            self.cookies = get_cookies()
+        
+        self.requests_session = self._get_requests_session(self.cookies)
+
 
     def __repr__(self):
         return (
@@ -145,9 +156,21 @@ class FundaScraper(object):
             os.makedirs("data")
 
     @staticmethod
-    def _get_links_from_one_parent(url: str) -> List[str]:
+    def _get_requests_session(cookies : List[Dict]) -> requests.Session:
+        """Return a request session instance with given cookies."""
+        session = requests.Session()
+        for cookie in cookies:
+            session.cookies.set(
+                cookie["name"], 
+                cookie["value"], 
+                domain=cookie["domain"], 
+                path=cookie["path"])
+        return session 
+    
+    
+    def _get_links_from_one_parent(self, url: str) -> List[str]:
         """Scrapes all available property links from a single Funda search page."""
-        response = requests.get(url, headers=config.header)
+        response = self.requests_session.get(url, headers=config.header)
         soup = BeautifulSoup(response.text, "lxml")
 
         script_tag = soup.find_all("script", {"type": "application/ld+json"})[0]
@@ -296,7 +319,7 @@ class FundaScraper(object):
         """Scrapes data from a single property link."""
 
         # Initialize for each page
-        response = requests.get(link, headers=config.header)
+        response = self.requests_session.get(link, headers=config.header)
         soup = BeautifulSoup(response.text, "lxml")
 
         # Get the value according to respective CSS selectors
