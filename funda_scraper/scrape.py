@@ -227,17 +227,17 @@ class FundaScraper(object):
     @staticmethod
     def fix_link(link: str) -> str:
         """Fixes a given property link to ensure proper URL formatting."""
-        link_url = urlparse(link)
-        link_path = link_url.path.split("/")
-        property_id = link_path.pop(5)
-        property_address = link_path.pop(4).split("-")
-        link_path = link_path[2:4]
-        property_address.insert(1, property_id)
-        link_path.extend(["-".join(property_address), "?old_ldp=true"])
-        fixed_link = urlunparse(
-            (link_url.scheme, link_url.netloc, "/".join(link_path), "", "", "")
-        )
-        return fixed_link
+        # link_url = urlparse(link)
+        # link_path = link_url.path.split("/")
+        # property_id = link_path.pop(5)
+        # property_address = link_path.pop(4).split("-")
+        # link_path = link_path[2:4]
+        # property_address.insert(1, property_id)
+        # link_path.extend(["-".join(property_address), "?old_ldp=true"])
+        # fixed_link = urlunparse(
+            # (link_url.scheme, link_url.netloc, "/".join(link_path), "", "", "")
+        # )
+        return link + "?old_ldp=true"
 
     def fetch_all_links(self, page_start: int = None, n_pages: int = None) -> None:
         """Collects all available property links across multiple pages."""
