@@ -31,9 +31,9 @@ keep_cols:
     - photo
 css_selector:
   url: none
-  price: ".object-header__price"
-  address: ".object-header__title"
-  descrip: ".object-description-body"
+  price: 'dt:-soup-contains("Asking price") + dd span.mr-2' 
+  address: "#features > div:nth-child(7) > dl > dt:nth-child(1)"
+  descrip: "#headlessui-disclosure-panel-v-0-0-1 > font > font"
   listed_since: ".fd-align-items-center:nth-child(6) span"
   zip_code: ".object-header__subtitle"
   size: ".object-kenmerken-list:nth-child(8) .fd-align-items-center:nth-child(5) span"
