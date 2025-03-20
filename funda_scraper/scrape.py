@@ -400,7 +400,7 @@ class FundaScraper(object):
         for i, c in enumerate(content):
             df.loc[len(df)] = c
 
-        df["city"] = df["url"].map(lambda x: x.split("/")[4])
+        df["city"] = df["url"].map(lambda x: x.split("/")[6])
         df["log_id"] = datetime.datetime.now().strftime("%Y%m-%d%H-%M%S")
         if not self.find_past:
             df = df.drop(["term", "price_sold", "date_sold"], axis=1)
