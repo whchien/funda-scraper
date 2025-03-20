@@ -376,14 +376,16 @@ class FundaScraper(object):
                 else:
                     result[4] = update_list_since
 
-        photos_list = [
-            p.get("data-lazy-srcset") for p in soup.select(self.selectors.photo)
-        ]
-        photos_string = ", ".join(photos_list)
+        # photos_list = [
+        #     p.get("data-lazy-srcset") for p in soup.select(self.selectors.photo)
+        # ]
+        # photos_string = ", ".join(photos_list)
+
+        photos_link = self.base_url + soup.select(self.selectors.photo)[0].get("href")
 
         # Clean up the retried result from one page
         result = [r.replace("\n", "").replace("\r", "").strip() for r in result]
-        result.append(photos_string)
+        result.append(photos_link)
         return result
 
     def scrape_pages(self) -> None:
