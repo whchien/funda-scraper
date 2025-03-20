@@ -223,6 +223,26 @@ class FundaScraper(object):
     def remove_duplicates(lst: List[str]) -> List[str]:
         """Removes duplicate links from a list."""
         return list(OrderedDict.fromkeys(lst))
+    
+    @staticmethod
+    def remove_link_overlap(first_url : str, second_url : str, delimeter : str = "/") -> str:
+        """Removes the overlapping part in a 2 links and return their concat.
+        
+            :example:
+            >>> remove_overlap("funda/en", "/en/something/something")
+            'funda/en/something/something'
+        """
+
+        first_url = first_url.split(delimeter)
+        second_url = second_url.split(delimeter)
+
+        for _, path in enumerate(reversed(first_url)):
+            try:
+                second_url.remove(path)
+            except Exception:
+                continue
+        
+        return delimeter.join(first_url + second_url)
 
     @staticmethod
     def fix_link(link: str) -> str:
@@ -376,12 +396,11 @@ class FundaScraper(object):
                 else:
                     result[4] = update_list_since
 
-        # photos_list = [
-        #     p.get("data-lazy-srcset") for p in soup.select(self.selectors.photo)
-        # ]
-        # photos_string = ", ".join(photos_list)
-
-        photos_link = self.base_url + soup.select(self.selectors.photo)[0].get("href")
+        # Fix link 
+        photos_link = self.remove_link_overlap(
+            self.base_url,
+            soup.select(self.selectors.photo)[0].get("href") 
+        )
 
         # Clean up the retried result from one page
         result = [r.replace("\n", "").replace("\r", "").strip() for r in result]

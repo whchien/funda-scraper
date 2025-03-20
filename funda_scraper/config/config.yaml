@@ -50,11 +50,11 @@ css_selector:
   ownership: "#features > div:nth-child(7) > dl > dd:nth-child(4)"
   exteriors: "#features > div:nth-child(8) > dl > dd:nth-child(2)"
   parking: "#features > div:nth-child(10) > dl > dd"
-  neighborhood_name: '#neighbourhood > div > div > a > div > span.block.truncate.text-2xl.font-semibold.md\:text-\[1\.75rem\]'
+  neighborhood_name: '#about > div.relative.flex.justify-between > h1 > a'
   date_list: "dd:nth-child(2)"
   date_sold: "dd:nth-child(4)"
   term: "dd:nth-child(6)"
   price_sold: ".object-header__price--historic"
   last_ask_price: ".object-kenmerken-list:nth-child(2) .fd-align-items-center:nth-child(2)"
-  last_ask_price_m2: ".object-kenmerken-list__asking-price"
-  photo: ".media-viewer-overview__section-list-item--photo img[data-lazy]"
+  last_ask_price_m2: "#features > div:nth-child(2) > dl > dd:nth-child(4) > span"
+  photo: '#media > div.m-auto.max-w-screen-lg.items-center.md\:flex.md\:justify-between > a'
