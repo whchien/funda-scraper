@@ -6,8 +6,7 @@ import json
 import multiprocessing as mp
 import os
 from collections import OrderedDict
-from typing import List, Optional, Dict
-from urllib.parse import urlparse, urlunparse
+from typing import List, Optional, Dict, Literal
 import pickle
 
 import pandas as pd
@@ -17,7 +16,7 @@ from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
 from funda_scraper.config.core import config
-from funda_scraper.preprocess import clean_date_format, preprocess_data
+from funda_scraper.preprocess import preprocess_data
 from funda_scraper.utils import logger, get_cookies, COOKIE_PATH
 
 
@@ -29,7 +28,7 @@ class FundaScraper(object):
     def __init__(
         self,
         area: str,
-        want_to: str,
+        want_to: Literal["buy", "rent"],
         page_start: int = 1,
         n_pages: int = 1,
         find_past: bool = False,
@@ -76,7 +75,12 @@ class FundaScraper(object):
         self.raw_df = pd.DataFrame()
         self.clean_df = pd.DataFrame()
         self.base_url = config.base_url
-        self.selectors = config.css_selector
+        
+        # Get css selector
+        if self.want_to == "buy": self.selectors = config.buy_css_selector
+        elif self.want_to == "rent": self.selectors = config.rent_css_selector 
+        else: raise NotImplementedError(
+            f"CSS selectors are not implemented for 'want_to' {self.want_to}")
 
         # Get cookies
         try:
@@ -84,28 +88,18 @@ class FundaScraper(object):
                 self.cookies = pickle.load(file)
         except FileNotFoundError:
             self.cookies = get_cookies()
-        
+
         self.requests_session = self._get_requests_session(self.cookies)
 
 
     def __repr__(self):
         return (
-            f"FundaScraper(area={self.area}, "
-            f"want_to={self.want_to}, "
-            f"n_pages={self.n_pages}, "
-            f"page_start={self.page_start}, "
-            f"find_past={self.find_past}, "
-            f"min_price={self.min_price}, "
-            f"max_price={self.max_price}, "
-            f"days_since={self.days_since}, "
-            f"min_floor_area={self.min_floor_area}, "
-            f"max_floor_area={self.max_floor_area}, "
-            f"find_past={self.find_past})"
-            f"min_price={self.min_price})"
-            f"max_price={self.max_price})"
-            f"days_since={self.days_since})"
-            f"sort={self.sort})"
-        )
+        f"FundaScraper(area={self.area}, want_to={self.want_to}, n_pages={self.n_pages}, "
+        f"page_start={self.page_start}, find_past={self.find_past}, min_price={self.min_price}, "
+        f"max_price={self.max_price}, days_since={self.days_since}, min_floor_area={self.min_floor_area}, "
+        f"max_floor_area={self.max_floor_area}, sort={self.sort})"
+    )
+
 
     @property
     def to_buy(self) -> bool:
@@ -116,6 +110,7 @@ class FundaScraper(object):
             return False
         else:
             raise ValueError("'want_to' must be either 'buy' or 'rent'.")
+
 
     @property
     def check_days_since(self) -> int:
@@ -128,8 +123,9 @@ class FundaScraper(object):
         else:
             raise ValueError("'days_since' must be either None, 1, 3, 5, 10 or 30.")
 
+
     @property
-    def check_sort(self) -> str:
+    def check_sort(self) -> Optional[str]:
         """Validates the 'sort' attribute."""
         if self.sort in [
             None,
@@ -149,11 +145,13 @@ class FundaScraper(object):
                 "'floor_area_down', 'plot_area_down', 'city_up' or 'postal_code_up'. "
             )
 
+
     @staticmethod
     def _check_dir() -> None:
         """Ensures the existence of the directory for storing data."""
         if not os.path.exists("data"):
             os.makedirs("data")
+
 
     @staticmethod
     def _get_requests_session(cookies : List[Dict]) -> requests.Session:
@@ -166,17 +164,88 @@ class FundaScraper(object):
                 domain=cookie["domain"], 
                 path=cookie["path"])
         return session 
+
+
+    @staticmethod
+    def _get_soup(session : requests.Session, link) -> BeautifulSoup:
+        """Fetches the page content and returns a BeautifulSoup object."""
+        try:
+            response = session.get(link, headers=config.header)
+            response.raise_for_status()
+            return BeautifulSoup(response.text, "lxml")
+        except requests.RequestException as e:
+            print(f"Error fetching {link}: {e}")
+            return None
+
+
+    @staticmethod
+    def get_value_from_css(
+        soup: BeautifulSoup, 
+        selector: str, 
+        attribute: str = None, 
+        property: str = "text"
+    ) -> str:
+        """Extracts data from HTML using a CSS selector."""
+        result = soup.select(selector)
+        if len(result) > 0:
+            if attribute:
+                result = result[0].get(attribute)
+            elif property == "text":
+                result = result[0].text
+            else:
+                raise NotImplementedError("Property not implemented")
+        else:
+            result = "na"
+        return result
     
-    
+
+    @staticmethod
+    def remove_duplicates(lst: List[str]) -> List[str]:
+        """Removes duplicate links from a list."""
+        return list(OrderedDict.fromkeys(lst))
+
+
+    @staticmethod
+    def remove_link_overlap(first_url : str, second_url : str, delimeter : str = "/") -> str:
+        """Removes the overlapping part in a 2 links and return their concat.
+        
+            :example:
+            >>> remove_overlap("funda/en", "/en/something/something")
+            'funda/en/something/something'
+        """
+
+        first_url = first_url.split(delimeter)
+        second_url = second_url.split(delimeter)
+
+        for _, path in enumerate(reversed(first_url)):
+            try:
+                second_url.remove(path)
+            except Exception:
+                continue
+
+        return delimeter.join(first_url + second_url)
+
+
+    @staticmethod
+    def fix_link(link: str) -> str:
+        """Fixes a given property link to ensure proper URL formatting."""
+
+        return link + "?old_ldp=true"
+
+
     def _get_links_from_one_parent(self, url: str) -> List[str]:
         """Scrapes all available property links from a single Funda search page."""
         response = self.requests_session.get(url, headers=config.header)
         soup = BeautifulSoup(response.text, "lxml")
 
+        if "Je bent bijna op de pagina die je zoekt" in response.text:
+            raise ConnectionError("Captcha blocking the page, try refresh the cookies")
+
         script_tag = soup.find_all("script", {"type": "application/ld+json"})[0]
         json_data = json.loads(script_tag.contents[0])
         urls = [item["url"] for item in json_data["itemListElement"]]
         return urls
+
 
     def reset(
         self,
@@ -219,45 +288,6 @@ class FundaScraper(object):
         if sort is not None:
             self.sort = sort
 
-    @staticmethod
-    def remove_duplicates(lst: List[str]) -> List[str]:
-        """Removes duplicate links from a list."""
-        return list(OrderedDict.fromkeys(lst))
-    
-    @staticmethod
-    def remove_link_overlap(first_url : str, second_url : str, delimeter : str = "/") -> str:
-        """Removes the overlapping part in a 2 links and return their concat.
-        
-            :example:
-            >>> remove_overlap("funda/en", "/en/something/something")
-            'funda/en/something/something'
-        """
-
-        first_url = first_url.split(delimeter)
-        second_url = second_url.split(delimeter)
-
-        for _, path in enumerate(reversed(first_url)):
-            try:
-                second_url.remove(path)
-            except Exception:
-                continue
-        
-        return delimeter.join(first_url + second_url)
-
-    @staticmethod
-    def fix_link(link: str) -> str:
-        """Fixes a given property link to ensure proper URL formatting."""
-        # link_url = urlparse(link)
-        # link_path = link_url.path.split("/")
-        # property_id = link_path.pop(5)
-        # property_address = link_path.pop(4).split("-")
-        # link_path = link_path[2:4]
-        # property_address.insert(1, property_id)
-        # link_path.extend(["-".join(property_address), "?old_ldp=true"])
-        # fixed_link = urlunparse(
-            # (link_url.scheme, link_url.netloc, "/".join(link_path), "", "", "")
-        # )
-        return link + "?old_ldp=true"
 
     def fetch_all_links(self, page_start: int = None, n_pages: int = None) -> None:
         """Collects all available property links across multiple pages."""
@@ -275,6 +305,7 @@ class FundaScraper(object):
                     f"{main_url}&search_result={i}"
                 )
                 urls += item_list
+
             except IndexError:
                 self.page_end = i
                 logger.info(f"*** The last available page is {self.page_end} ***")
@@ -287,6 +318,7 @@ class FundaScraper(object):
             f"*** Got all the urls. {len(fixed_urls)} houses found from {self.page_start} to {self.page_end} ***"
         )
         self.links = fixed_urls
+
 
     def _build_main_query_url(self) -> str:
         """Constructs the main query URL for the search."""
@@ -325,93 +357,45 @@ class FundaScraper(object):
         logger.info(f"*** Main URL: {main_url} ***")
         return main_url
 
-    @staticmethod
-    def get_value_from_css(soup: BeautifulSoup, selector: str) -> str:
-        """Extracts data from HTML using a CSS selector."""
-        result = soup.select(selector)
-        if len(result) > 0:
-            result = result[0].text
-        else:
-            result = "na"
-        return result
 
     def scrape_one_link(self, link: str) -> List[str]:
         """Scrapes data from a single property link."""
 
-        # Initialize for each page
-        response = self.requests_session.get(link, headers=config.header)
-        soup = BeautifulSoup(response.text, "lxml")
+        # Fetch page content safely
+        soup = self._get_soup(self.requests_session, link)
+        if not soup:
+            return [] 
 
-        # Get the value according to respective CSS selectors
-        if self.to_buy:
-            if self.find_past:
-                list_since_selector = self.selectors.date_list
-            else:
-                list_since_selector = self.selectors.listed_since
-        else:
-            if self.find_past:
-                list_since_selector = ".fd-align-items-center:nth-child(9) span"
-            else:
-                list_since_selector = ".fd-align-items-center:nth-child(7) span"
+        # Extract values using CSS selectors
+        css_selector_dict = {
+            key : val 
+            for section in self.selectors.values() 
+            for key, val in section.items()
+        }
+        
+        result = []
+        for key, selector in css_selector_dict.items():
+            attribute = "href" if "link" in key else None
+            value = self.get_value_from_css(soup, selector, attribute=attribute)
 
-        result = [
-            link,
-            self.get_value_from_css(soup, self.selectors.price),
-            self.get_value_from_css(soup, self.selectors.address),
-            self.get_value_from_css(soup, self.selectors.descrip),
-            self.get_value_from_css(soup, list_since_selector),
-            self.get_value_from_css(soup, self.selectors.zip_code),
-            self.get_value_from_css(soup, self.selectors.size),
-            self.get_value_from_css(soup, self.selectors.year),
-            self.get_value_from_css(soup, self.selectors.living_area),
-            self.get_value_from_css(soup, self.selectors.kind_of_house),
-            self.get_value_from_css(soup, self.selectors.building_type),
-            self.get_value_from_css(soup, self.selectors.num_of_rooms),
-            self.get_value_from_css(soup, self.selectors.num_of_bathrooms),
-            self.get_value_from_css(soup, self.selectors.layout),
-            self.get_value_from_css(soup, self.selectors.energy_label),
-            self.get_value_from_css(soup, self.selectors.insulation),
-            self.get_value_from_css(soup, self.selectors.heating),
-            self.get_value_from_css(soup, self.selectors.ownership),
-            self.get_value_from_css(soup, self.selectors.exteriors),
-            self.get_value_from_css(soup, self.selectors.parking),
-            self.get_value_from_css(soup, self.selectors.neighborhood_name),
-            self.get_value_from_css(soup, self.selectors.date_list),
-            self.get_value_from_css(soup, self.selectors.date_sold),
-            self.get_value_from_css(soup, self.selectors.term),
-            self.get_value_from_css(soup, self.selectors.price_sold),
-            self.get_value_from_css(soup, self.selectors.last_ask_price),
-            self.get_value_from_css(soup, self.selectors.last_ask_price_m2).split("\r")[
-                0
-            ],
-        ]
-
-        # Deal with list_since_selector especially, since its CSS varies sometimes
-        if clean_date_format(result[4]) == "na":
-            for i in range(6, 16):
-                selector = f".fd-align-items-center:nth-child({i}) span"
-                update_list_since = self.get_value_from_css(soup, selector)
-                if clean_date_format(update_list_since) == "na":
-                    pass
-                else:
-                    result[4] = update_list_since
-
-        # Fix link 
-        photos_link = self.remove_link_overlap(
-            self.base_url,
-            soup.select(self.selectors.photo)[0].get("href") 
-        )
+            # Fix relative links
+            if attribute == "href" and value:
+                value = self.remove_link_overlap(self.base_url, value)
+            
+            result.append(value)
 
         # Clean up the retried result from one page
         result = [r.replace("\n", "").replace("\r", "").strip() for r in result]
-        result.append(photos_link)
+        
         return result
+
 
     def scrape_pages(self) -> None:
         """Scrapes data from all collected property links."""
 
         logger.info("*** Phase 2: Start scraping from individual links ***")
-        df = pd.DataFrame({key: [] for key in self.selectors.keys()})
+        self.keys = [key for section in self.selectors.values() for key in section.keys()]
+        df = pd.DataFrame({key: [] for key in self.keys})
 
         # Scrape pages with multiprocessing to improve efficiency
         # TODO: use asyncio instead
