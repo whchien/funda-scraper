@@ -91,7 +91,55 @@ buy_css_selector:
   sale_history:
     listed_since: 'dt:-soup-contains("Listed since") + dd'
     sale_date: 'dt:-soup-contains("Date of sale") + dd'
-    term: 'dt:-soup-contains("term") + dd'
+    term: 'dt:-soup-contains("Term") + dd'
+
+rent_css_selector:
+  general_info:
+    url : none
+    descrip: '#headlessui-disclosure-panel-v-0-0-1'
+    zip_code: '#about > div.relative.flex.justify-between > h1 > span.text-neutral-40'
+    part_of_project: 'div:-soup-contains("Part of project") > a'
+    address: '#about > div.relative.flex.justify-between > h1 > span.block.text-2xl.font-bold.md\:text-3xl.lg\:text-4xl'
+    neighborhood_name: '#about > div.relative.flex.justify-between > h1 > a'
+    photo_link: '#media > div.m-auto.max-w-screen-lg.items-center.md\:flex.md\:justify-between > a'
+  
+  transfer_ownership:
+    rental_price: 'dt:-soup-contains("Rental price") + dd'
+    deposit: 'dt:-soup-contains("Deposit") + dd'
+    rent_agreement: 'dt:-soup-contains("Rental agreement") + dd'
+    listed_since: 'dt:-soup-contains("Listed since") + dd'
+    status: 'dt:-soup-contains("Status") + dd'
+    acceptance: 'dt:-soup-contains("Acceptance") + dd'
+  construction:
+    type_apartment: 'dt:-soup-contains("Type apartment") + dd'
+    building_type: 'dt:-soup-contains("Building type") + dd'
+    year_built: 'dt:-soup-contains("Year of construction") + dd'
+    furnished_specific: 'dt:-soup-contains("Specific") + dd'
+    roof_type: 'dt:-soup-contains("Type of roof") + dd'
+  area_volume:
+    living_area: 'dt:-soup-contains("Living area") + dd'
+    exterior_space: 'dt:-soup-contains("Exterior space attached to the building") + dd'
+    exterior_storage: 'dt:-soup-contains("External storage space") + dd'
+    volume_in_m3: 'dt:-soup-contains("Volume in cubic meters") + dd'
+  layout:
+    num_of_rooms: 'dt:-soup-contains("Number of rooms") + dd'
+    num_of_bathrooms: 'dt:-soup-contains("Number of bath rooms") + dd'
+    bathroom_facilities: 'dt:-soup-contains("Bathroom facilities") + dd'
+    num_of_stories: 'dt:-soup-contains("Number of stories") + dd'
+    located_at: 'dt:-soup-contains("Located at") + dd'
+    facilities: 'dt:-soup-contains("Facilities") + dd'
+  energy:
+    energy_label: 'dt:-soup-contains("Energy label") + dd'
+    insulation: 'dt:-soup-contains("Insulation") + dd'
+    heating: 'dt:-soup-contains("Heating") + dd'
+    hot_water: 'dt:-soup-contains("Hot water") + dd'
+    ch_boilder: 'dt:-soup-contains("CH boiler") + dd'
+  exterior_space:
+    location: 'dt:-soup-contains("Location") + dd'
+    balcony_roof: 'dt:-soup-contains("Balcony/roof terrace") + dd'
+  parking:
+    parking_type: 'dt:-soup-contains("Type of parking facilities") + dd'
+  
 
 
 
