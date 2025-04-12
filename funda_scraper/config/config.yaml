@@ -6,7 +6,7 @@ keep_cols:
     - date_sold
     - ym_sold
     - year_sold
-#    - term_days
+  #    - term_days
   selling_data:
     - url
     - house_id
@@ -29,32 +29,119 @@ keep_cols:
     # - year_list
     - descrip
     - photo
-css_selector:
-  url: none
-  price: ".object-header__price"
-  address: ".object-header__title"
-  descrip: ".object-description-body"
-  listed_since: ".fd-align-items-center:nth-child(6) span"
-  zip_code: ".object-header__subtitle"
-  size: ".object-kenmerken-list:nth-child(8) .fd-align-items-center:nth-child(5) span"
-  year: ".fd-align-items-center~ .fd-align-items-center .fd-m-right-xs"
-  living_area: ".object-kenmerken-list:nth-child(8) .fd-align-items-center:nth-child(2) span"
-  kind_of_house: ".object-kenmerken-list:nth-child(5) .fd-align-items-center:nth-child(2) span"
-  building_type: ".object-kenmerken-list:nth-child(5) .fd-align-items-center:nth-child(4) span"
-  num_of_rooms: ".object-kenmerken-list:nth-child(11) .fd-align-items-center:nth-child(2)"
-  num_of_bathrooms: ".object-kenmerken-list:nth-child(11) .fd-align-items-center:nth-child(4)"
-  layout: ".object-kenmerken-list:nth-child(11)"
-  energy_label: ".energielabel"
-  insulation: ".object-kenmerken-list:nth-child(14) .fd-align-items-center:nth-child(4)"
-  heating: ".object-kenmerken-list:nth-child(14) .fd-align-items-center:nth-child(6)"
-  ownership: ".object-kenmerken-list:nth-child(17) .fd-align-items-center:nth-child(4)"
-  exteriors: ".object-kenmerken-list:nth-child(19)"
-  parking: ".object-kenmerken-list:nth-child(24)"
-  neighborhood_name: ".fd-display-inline--bp-m"
-  date_list: "dd:nth-child(2)"
-  date_sold: "dd:nth-child(4)"
-  term: "dd:nth-child(6)"
-  price_sold: ".object-header__price--historic"
-  last_ask_price: ".object-kenmerken-list:nth-child(2) .fd-align-items-center:nth-child(2)"
-  last_ask_price_m2: ".object-kenmerken-list__asking-price"
-  photo: ".media-viewer-overview__section-list-item--photo img[data-lazy]"
+buy_css_selector:
+  general_info:
+    url: none
+    zip_code: "#about > div.relative.flex.justify-between > h1 > span.text-neutral-40"
+    part_of_project: 'div:-soup-contains("Part of project") > a'
+    address: "#features > div:nth-child(7) > dl > dt:nth-child(1)"
+    descrip: "#headlessui-disclosure-panel-v-0-0-1"
+    neighborhood_name: "#about > div.relative.flex.justify-between > h1 > a"
+    photo_link: '#media > div.m-auto.max-w-screen-lg.items-center.md\:flex.md\:justify-between > a'
+
+  transfer_ownership:
+    asking_price: 'dt:-soup-contains("Asking price") + dd span.mr-2'
+    asking_price_m2: 'dt:-soup-contains("Asking price per m²") + dd > span'
+    status: 'dt:-soup-contains("Status") + dd'
+    acceptance: 'dt:-soup-contains("Acceptance") + dd'
+    vve_contribution: 'dt:-soup-contains("VVE (Owners Association) contribution") + dd'
+    last_ask_price: 'dt:-soup-contains("Last asking price") + dd'
+    last_ask_price_m2: 'dt:-soup-contains("Asking price per m²") + dd'
+  
+  construction:
+    building_type: 'dt:-soup-contains("Building type") + dd'
+    construction_year: 'dt:-soup-contains("Year of construction") + dd'
+    accessibility: 'dt:-soup-contains("Accessibility") + dd'
+    roof_type: 'dt:-soup-contains("Type of roof") + dd'
+  
+  area_volume:
+    living_area: 'dt:-soup-contains("Living area") + dd'
+    volume_in_m3: 'dt:-soup-contains("Volume in cubic meters") + dd'
+  
+  layout:
+    num_of_rooms: 'dt:-soup-contains("Number of rooms") + dd'
+    num_of_bathrooms: 'dt:-soup-contains("Number of bath rooms") + dd'
+    bathroom_facilities: 'dt:-soup-contains("Bathroom facilities") + dd'
+    num_of_stories: 'dt:-soup-contains("Number of stories") + dd'
+    located_at: 'dt:-soup-contains("Located at") + dd'
+    facilities: 'dt:-soup-contains("Facilities") + dd'
+  
+  energy:
+    energy_label: 'dt:-soup-contains("Energy label") + dd'
+    insulation: 'dt:-soup-contains("Insulation") + dd'
+    heating: 'dt:-soup-contains("Heating") + dd'
+    hot_water: 'dt:-soup-contains("Hot water") + dd'
+    ch_boilder: 'dt:-soup-contains("CH boiler") + dd'
+  
+  cadastral_data:
+    cadastral_map_link: 'a:-soup-contains("Cadastral map")'
+    ownership_situation: 'dt:-soup-contains("Ownership situation") + dd'
+    fee: 'dt:-soup-contains("Fees") + dd'
+  
+  exterior_space:
+    exterior_location: 'dt:-soup-contains("Location") + dd'
+    balcony_roof terrace: 'dt:-soup-contains("Balcony/roof terrace") + dd'
+  
+  storage_space:
+    storage: 'dt:-soup-contains("Shed / storage") + dd'
+  
+  parking:
+    parking_type: 'dt:-soup-contains("Type of parking facilities") + dd'
+  
+  sale_history:
+    listed_since: 'dt:-soup-contains("Listed since") + dd'
+    sale_date: 'dt:-soup-contains("Date of sale") + dd'
+    term: 'dt:-soup-contains("Term") + dd'
+
+rent_css_selector:
+  general_info:
+    url : none
+    descrip: '#headlessui-disclosure-panel-v-0-0-1'
+    zip_code: '#about > div.relative.flex.justify-between > h1 > span.text-neutral-40'
+    part_of_project: 'div:-soup-contains("Part of project") > a'
+    address: '#about > div.relative.flex.justify-between > h1 > span.block.text-2xl.font-bold.md\:text-3xl.lg\:text-4xl'
+    neighborhood_name: '#about > div.relative.flex.justify-between > h1 > a'
+    photo_link: '#media > div.m-auto.max-w-screen-lg.items-center.md\:flex.md\:justify-between > a'
+  
+  transfer_ownership:
+    rental_price: 'dt:-soup-contains("Rental price") + dd'
+    deposit: 'dt:-soup-contains("Deposit") + dd'
+    rent_agreement: 'dt:-soup-contains("Rental agreement") + dd'
+    listed_since: 'dt:-soup-contains("Listed since") + dd'
+    status: 'dt:-soup-contains("Status") + dd'
+    acceptance: 'dt:-soup-contains("Acceptance") + dd'
+  construction:
+    type_apartment: 'dt:-soup-contains("Type apartment") + dd'
+    building_type: 'dt:-soup-contains("Building type") + dd'
+    year_built: 'dt:-soup-contains("Year of construction") + dd'
+    furnished_specific: 'dt:-soup-contains("Specific") + dd'
+    roof_type: 'dt:-soup-contains("Type of roof") + dd'
+  area_volume:
+    living_area: 'dt:-soup-contains("Living area") + dd'
+    exterior_space: 'dt:-soup-contains("Exterior space attached to the building") + dd'
+    exterior_storage: 'dt:-soup-contains("External storage space") + dd'
+    volume_in_m3: 'dt:-soup-contains("Volume in cubic meters") + dd'
+  layout:
+    num_of_rooms: 'dt:-soup-contains("Number of rooms") + dd'
+    num_of_bathrooms: 'dt:-soup-contains("Number of bath rooms") + dd'
+    bathroom_facilities: 'dt:-soup-contains("Bathroom facilities") + dd'
+    num_of_stories: 'dt:-soup-contains("Number of stories") + dd'
+    located_at: 'dt:-soup-contains("Located at") + dd'
+    facilities: 'dt:-soup-contains("Facilities") + dd'
+  energy:
+    energy_label: 'dt:-soup-contains("Energy label") + dd'
+    insulation: 'dt:-soup-contains("Insulation") + dd'
+    heating: 'dt:-soup-contains("Heating") + dd'
+    hot_water: 'dt:-soup-contains("Hot water") + dd'
+    ch_boilder: 'dt:-soup-contains("CH boiler") + dd'
+  exterior_space:
+    location: 'dt:-soup-contains("Location") + dd'
+    balcony_roof: 'dt:-soup-contains("Balcony/roof terrace") + dd'
+  parking:
+    parking_type: 'dt:-soup-contains("Type of parking facilities") + dd'
+  
+
+
+
+  
+ 
