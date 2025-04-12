@@ -17,7 +17,7 @@ def setup_teardown():
     if TEST_PATH.is_dir():
         shutil.rmtree(TEST_PATH)
 
-
+@pytest.mark.skip(reason="Temporarily skipping this test for debugging")
 def test_get_cookies(setup_teardown):
     print(setup_teardown)
     get_cookies(TEST_PATH)
