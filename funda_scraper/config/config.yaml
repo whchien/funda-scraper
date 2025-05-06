@@ -6,11 +6,12 @@ keep_cols:
     - date_sold
     - ym_sold
     - year_sold
-#    - term_days
+  #    - term_days
   selling_data:
     - url
     - house_id
     - city
+    - neighborhood_name
     - house_type
     - building_type
     - price
@@ -27,34 +28,36 @@ keep_cols:
     # - date_list
     # - ym_list
     # - year_list
-    - descrip
-    - photo
+    - description
+    # - photos
 css_selector:
   url: none
-  price: ".object-header__price"
+  price: "section.mt-6 > div:nth-child(2) > dl:nth-child(2) > dd:nth-child(2) > span:nth-child(1)"
   address: ".object-header__title"
   descrip: ".object-description-body"
-  listed_since: ".fd-align-items-center:nth-child(6) span"
-  zip_code: ".object-header__subtitle"
+  listed_since: "section.mt-6 > div:nth-child(2) > dl:nth-child(2) > dd:nth-child(6) > span:nth-child(1)"
+  zip_code: "span.text-neutral-40:nth-child(2)"
   size: ".object-kenmerken-list:nth-child(8) .fd-align-items-center:nth-child(5) span"
   year: ".fd-align-items-center~ .fd-align-items-center .fd-m-right-xs"
-  living_area: ".object-kenmerken-list:nth-child(8) .fd-align-items-center:nth-child(2) span"
-  kind_of_house: ".object-kenmerken-list:nth-child(5) .fd-align-items-center:nth-child(2) span"
-  building_type: ".object-kenmerken-list:nth-child(5) .fd-align-items-center:nth-child(4) span"
-  num_of_rooms: ".object-kenmerken-list:nth-child(11) .fd-align-items-center:nth-child(2)"
-  num_of_bathrooms: ".object-kenmerken-list:nth-child(11) .fd-align-items-center:nth-child(4)"
+  year_of_construction: ".mt-6.md\\:mt-7 > div:nth-of-type(2) > dl > dd:nth-of-type(3) span"
+  living_area: "section.mt-6 > div:nth-child(4) > dl:nth-child(2) > dd:nth-child(4)"
+  kind_of_house: "section.mt-6 > div:nth-of-type(2) > dl > dd:nth-of-type(1) span"
+  building_type: "section.mt-6 > div:nth-child(3) > dl:nth-child(2) > dd:nth-child(4) > span:nth-child(1)"
+  num_of_rooms: "section.mt-6 > div:nth-of-type(4) > dl > dd:nth-of-type(1) span"
+  num_of_bathrooms: "section.mt-6 > div:nth-of-type(4) > dl > dd:nth-of-type(2) span"
   layout: ".object-kenmerken-list:nth-child(11)"
-  energy_label: ".energielabel"
-  insulation: ".object-kenmerken-list:nth-child(14) .fd-align-items-center:nth-child(4)"
-  heating: ".object-kenmerken-list:nth-child(14) .fd-align-items-center:nth-child(6)"
-  ownership: ".object-kenmerken-list:nth-child(17) .fd-align-items-center:nth-child(4)"
+  energy_label: ".gap-6 > div:nth-child(1)"
+  insulation: ".mt-6.md\\:mt-7 > div:nth-of-type(5) > dl > dd:nth-of-type(2) span"
+  heating: "section.mt-6 > div:nth-of-type(5) > dl > dd:nth-of-type(3) span"
+  ownership: "section.mt-6 > div:nth-of-type(6) > dl > dd:nth-of-type(2) span"
   exteriors: ".object-kenmerken-list:nth-child(19)"
-  parking: ".object-kenmerken-list:nth-child(24)"
-  neighborhood_name: ".fd-display-inline--bp-m"
+  parking: "section.mt-6 > div:nth-of-type(5) > dl > dd:nth-of-type(1) span"
+  neighborhood_name: ".object-header__container > a"
   date_list: "dd:nth-child(2)"
   date_sold: "dd:nth-child(4)"
   term: "dd:nth-child(6)"
   price_sold: ".object-header__price--historic"
-  last_ask_price: ".object-kenmerken-list:nth-child(2) .fd-align-items-center:nth-child(2)"
-  last_ask_price_m2: ".object-kenmerken-list__asking-price"
+  last_ask_price: "section.mt-6 > div:nth-child(2) > dl:nth-child(2) > dd:nth-child(2) > span:nth-child(1)"
+  last_ask_price_m2: "section.mt-6 > div:nth-child(2) > dl:nth-child(2) > dd:nth-child(4) > span:nth-child(1)"
   photo: ".media-viewer-overview__section-list-item--photo img[data-lazy]"
+  photos: "main > div:nth-child(1) ul > li:nth-child(1) > a > span:nth-child(3)"

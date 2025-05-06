@@ -11,8 +11,8 @@ class TestFundaScraper(object):
             area="amsterdam",
             want_to="buy",
             page_start=1,
-            n_pages=1,
-            find_past=False,
+            number_of_pages=1,
+            find_sold=False,
             min_price=100000,
             max_price=500000,
             days_since=None,
@@ -34,9 +34,9 @@ class TestFundaScraper(object):
         assert scraper.check_sort == "price_down"
 
     def test_reset(self, scraper):
-        scraper.reset(area="rotterdam", n_pages=2)
+        scraper.reset(area="rotterdam", number_of_pages=2)
         assert scraper.area == "rotterdam"
-        assert scraper.n_pages == 2
+        assert scraper.number_of_pages == 2
 
     def test_fix_link(self, scraper):
         link = "https://www.funda.nl/detail/koop/den-haag/appartement-address-333/88888888/"
@@ -49,7 +49,7 @@ class TestFundaScraper(object):
 
 def test_rent():
     scraper = FundaScraper(
-        area="amsterdam", want_to="rent", find_past=False, page_start=1, n_pages=1
+        area="amsterdam", want_to="rent", find_sold=False, page_start=1, number_of_pages=1
     )
     df = scraper.run(raw_data=True)
     assert len(scraper.links) == 15
@@ -63,7 +63,7 @@ def test_rent():
 
 def test_rent_past():
     scraper = FundaScraper(
-        area="amsterdam", want_to="rent", find_past=True, page_start=1, n_pages=1
+        area="amsterdam", want_to="rent", find_sold=True, page_start=1, number_of_pages=1
     )
     df = scraper.run(raw_data=True)
     assert len(scraper.links) == 15
@@ -77,7 +77,7 @@ def test_rent_past():
 
 def test_buy():
     scraper = FundaScraper(
-        area="amsterdam", want_to="buy", find_past=False, page_start=1, n_pages=1
+        area="amsterdam", want_to="buy", find_sold=False, page_start=1, number_of_pages=1
     )
     df = scraper.run(raw_data=True)
     assert len(scraper.links) == 15
@@ -91,7 +91,7 @@ def test_buy():
 
 def test_buy_past():
     scraper = FundaScraper(
-        area="amsterdam", want_to="buy", find_past=True, page_start=1, n_pages=1
+        area="amsterdam", want_to="buy", find_sold=True, page_start=1, number_of_pages=1
     )
     df = scraper.run(raw_data=True)
     assert len(scraper.links) == 15
@@ -108,9 +108,9 @@ def test_buy_house():
         area="amsterdam",
         property_type="house",
         want_to="buy",
-        find_past=False,
+        find_sold=False,
         page_start=1,
-        n_pages=1,
+        number_of_pages=1,
     )
     df = scraper.run(raw_data=True)
     assert len(scraper.links) == 15
@@ -128,9 +128,9 @@ def test_buy_apartment():
         area="amsterdam",
         property_type="apartment",
         want_to="buy",
-        find_past=False,
+        find_sold=False,
         page_start=1,
-        n_pages=1,
+        number_of_pages=1,
     )
     df = scraper.run(raw_data=True)
     assert len(scraper.links) == 15
@@ -148,9 +148,9 @@ def test_buy_mixed():
         area="amsterdam",
         property_type="apartment,house",
         want_to="buy",
-        find_past=False,
+        find_sold=False,
         page_start=1,
-        n_pages=1,
+        number_of_pages=1,
     )
     df = scraper.run(raw_data=True)
     assert len(scraper.links) == 15
